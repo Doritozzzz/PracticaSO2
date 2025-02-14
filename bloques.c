@@ -1,4 +1,4 @@
-// Bloques.c
+// bloques.c
 
 #include "bloques.h"
 
@@ -11,6 +11,9 @@ static int descriptor = 0;
  * @return Descriptor si se ha montado correctamente, FALLO en caso contrario
  */
 int bmount(const char *camino) {
+    // Cambiar la máscara de creación de ficheros para evitar problemas de permisos
+    umask(000);
+
     // Abrir el fichero en modo lectura y escritura
     descriptor = open(camino, O_RDWR | O_CREAT, 0666);
     // Comprobar si se ha abierto correctamente, devuelve FALLO en caso contrario
