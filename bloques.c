@@ -75,4 +75,38 @@ int bwrite(unsigned int nbloque, const void *buf){
     return escritura;
 }
 
-int bread(unsigned int nbloque, void *buf);
+/**
+ * bread --> Función para leer un bloque
+ * @param nbloque: Número de bloque físico que se va a leer
+ * @param buf: Buffer donde se van a almacenar los datos leídos (con tamaño BLOCKSIZE)
+ * 
+ * Calcula el desplazamiento en el fichero, se desplaza a esa posición y 
+ * lee del fichero. Se usa off_t para el desplazamiento y ssize_t (permite +2Gb)
+ * 
+ * @return Numero de bytes leidos, FALLO en caso contrario
+ */
+int bread(unsigned int nbloque, void *buf){
+    // Calculamos desplazamiento en el fichero
+    off_t desplazamiento = nbloque * BLOCKSIZE;
+
+    // Movemos el puntero a la posición calculada
+    int posicion = lseek(descriptor, desplazamiento, SEEK_SET);
+
+    // Comprobar si se ha desplazado correctamente, devuelve FALLO en caso contrario
+    if (posicion == -1) {
+        fprintf(stderr, "Error en el desplazamiento del fichero: %s\n", strerror(errno));
+        return FALLO;
+    }
+
+    // Leer del fichero
+    ssize_t lectura = read(descriptor, buf, BLOCKSIZE);
+
+    // Comprobar si se ha leído correctamente, devuelve FALLO en caso contrario
+    if (lectura == -1) {
+        fprintf(stderr, "Error en la lectura del fichero: %s\n", strerror(errno));
+        return FALLO;
+    }
+
+    // Devolver el número de bytes leidos (BLOCKSIZE)--> 1024
+    return lectura;
+}
