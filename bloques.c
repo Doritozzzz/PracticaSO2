@@ -18,6 +18,7 @@ int bmount(const char *camino) {
         fprintf(stderr, "Error en la apertura del fichero %s: %s\n", camino, strerror(errno));
         return FALLO;
     }
+
     // Devolver el descriptor
     return descriptor;
 }
@@ -34,10 +35,44 @@ int bumount(){
         fprintf(stderr, "Error en el cierre del fichero: %s\n", strerror(errno));
         return FALLO;
     }
+
     // Devolver EXITO (se ha cerrado correctamente)
     return EXITO;
 }
+/**
+ * bwrite --> Función para escribir en un bloque
+ * @param nbloque: Número de bloque físico donde se va a escribir
+ * @param buf: Buffer con los datos a escribir (con tamaño BLOCKSIZE)
+ * 
+ * Calcula el desplazamiento en el fichero, se desplaza a esa posición y 
+ * escribe en el fichero. Se usa off_t para el desplazamiento y ssize_t (permite +2Gb)
+ * 
+ * @return Numero de bytes escritos, FALLO en caso contrario
+ */
+int bwrite(unsigned int nbloque, const void *buf){
+    // Calculamos desplazamiento en el fichero
+    off_t desplazamiento = nbloque * BLOCKSIZE;
 
-int bwrite(unsigned int nbloque, const void *buf);
+    // Movemos el puntero a la posición calculada
+    int posicion = lseek(descriptor, desplazamiento, SEEK_SET);
+
+    // Comprobar si se ha desplazado correctamente, devuelve FALLO en caso contrario
+    if (posicion == -1) {
+        fprintf(stderr, "Error en el desplazamiento del fichero: %s\n", strerror(errno));
+        return FALLO;
+    }
+
+    // Escribir en el fichero
+    ssize_t escritura = write(descriptor, buf, BLOCKSIZE);
+
+    // Comprobar si se ha escrito correctamente, devuelve FALLO en caso contrario
+    if (escritura == -1) {
+        fprintf(stderr, "Error en la escritura del fichero: %s\n", strerror(errno));
+        return FALLO;
+    }
+
+    // Devolver el número de bytes escritos (BLOCKSIZE)--> 1024
+    return escritura;
+}
 
 int bread(unsigned int nbloque, void *buf);
