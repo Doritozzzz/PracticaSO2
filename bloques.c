@@ -21,8 +21,22 @@ int bmount(const char *camino) {
     // Devolver el descriptor
     return descriptor;
 }
+/**
+ * bumount --> Función para desmontar el dispositivo virtual
+ * @return EXITO si se ha desmontado correctamente, FALLO en caso contrario
+ */
+int bumount(){
+    // Cerrar el fichero (dispositivo virtual)
+    int cierre = close(descriptor);
 
-int bumount();
+    // Comprobar si se ha cerrado correctamente, devuelve FALLO en caso contrario
+    if (cierre == -1) {
+        fprintf(stderr, "Error en el cierre del fichero: %s\n", strerror(errno));
+        return FALLO;
+    }
+    // Devolver EXITO (se ha cerrado correctamente)
+    return EXITO;
+}
 
 int bwrite(unsigned int nbloque, const void *buf);
 
