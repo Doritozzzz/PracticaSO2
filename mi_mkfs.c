@@ -1,5 +1,5 @@
 // mi_mkfs.c
-#include "bloques.h"
+#include "ficheros_basicos.h"
 #include <string.h>
 
 /**
@@ -30,9 +30,11 @@
         return FALLO;
     }
 
+    int ninodos = nbloques / 4; 
+
     // Montar el dispositivo virtual
     if (bmount(nombre_dispositivo) == FALLO) {
-        fprintf(stderr, "Error el montaje del dispositivo virtual.\n");
+        fprintf(stderr, "Error en el montaje del dispositivo virtual.\n");
         return FALLO;
     }
 
@@ -47,6 +49,27 @@
             bumount();
             return FALLO;
         }
+    }
+
+    // Inicializar el superbloque
+    if (initSB(nbloques, ninodos) == FALLO) {
+        fprintf(stderr, "Error al inicializar el superbloque.\n");
+        bumount();
+        return FALLO;
+    }
+
+    // Inicializar el mapa de bits
+    if (initMB(nbloques, ninodos) == FALLO) {
+        fprintf(stderr, "Error al inicializar el mapa de bits.\n");
+        bumount();
+        return FALLO;
+    }
+
+    // Inicializar el array de inodos
+    if (initAI() == FALLO) {
+        fprintf(stderr, "Error al inicializar el array de inodos.\n");
+        bumount();
+        return FALLO;
     }
 
     // Desmontar el dispositivo virtual
