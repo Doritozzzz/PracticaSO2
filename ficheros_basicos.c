@@ -18,7 +18,23 @@ int tamMB(unsigned int nbloques){
     return tamMB;
 }
 
-int tamAI(unsigned int ninodos);
+/**
+ * tamAI --> Función para calcular el tamaño del array de inodos en bloques
+ * @param ninodos: Número de inodos del dispositivo (ninodos=nbloques/4)
+ * @return Tamaño del array de inodos en bloques
+ */
+int tamAI(unsigned int ninodos){
+    // Calculamos el tamaño del array de inodos en bloques
+    int tamAI = (ninodos * INODOSIZE) / BLOCKSIZE;
+
+    // Si el tamaño del array de inodos en bloques no es exacto, añadimos un bloque más (como en tamMB)
+    if ((ninodos * INODOSIZE) % BLOCKSIZE != 0) {
+        tamAI++;
+    }
+
+    // Devolvemos el tamaño del array de inodos en bloques
+    return tamAI;
+}
 
 int initSB(unsigned int nbloques, unsigned int ninodos);
 
