@@ -46,7 +46,7 @@ int tamAI(unsigned int ninodos)
  * @return EXITO si se ha inicializado correctamente, FALLO en caso contrario
  */
 int initSB(unsigned int nbloques, unsigned int ninodos) {
-    // COmprobamos que nbloques y ninodos no sean cero
+    // Comprobamos que nbloques y ninodos no sean cero
     if (nbloques == 0 || ninodos == 0) {
         fprintf(stderr, "Error: nbloques o ninodos no pueden ser cero.\n");
         return FALLO;
