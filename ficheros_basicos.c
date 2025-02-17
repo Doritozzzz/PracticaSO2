@@ -25,8 +25,7 @@ int tamMB(unsigned int nbloques)
  * @param ninodos: Número de inodos del dispositivo (ninodos=nbloques/4)
  * @return Tamaño del array de inodos en bloques
  */
-int tamAI(unsigned int ninodos)
-{
+int tamAI(unsigned int ninodos){
     // Calculamos el tamaño del array de inodos en bloques
     int tamAI = (ninodos * INODOSIZE) / BLOCKSIZE;
 
@@ -39,6 +38,7 @@ int tamAI(unsigned int ninodos)
     // Devolvemos el tamaño del array de inodos en bloques
     return tamAI;
 }
+
 /**
  * initSB --> Función para inicializar el superbloque
  * @param nbloques: Número de bloques del dispositivo
