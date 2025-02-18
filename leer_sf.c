@@ -36,6 +36,8 @@ int main(int argc, char **argv){
     printf ("sizeof struct inodo is: %lu\n", sizeof(struct inodo));
     printf("\n");
 
+    
+    
 
     if(bumount(nombre_dispositivo)==FALLO){
         fprintf(stderr,"Error en el cierre del dispositivo virtual.\n");
