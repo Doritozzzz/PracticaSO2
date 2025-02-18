@@ -1,4 +1,4 @@
-#include "ficheros_basicos.h"
+#include "ficheros_basico.h"
 
 /**
  * tamMB --> Función para calcular el tamaño del mapa de bits en bloques
@@ -8,6 +8,7 @@
 int tamMB(unsigned int nbloques)
 {
     // Calculamos el tamaño del mapa de bits en bloques
+    // (bitsNecesarios/8 bits)/BytesPorBloque=Bloques de Mapa de bits
     int tamMB = (nbloques / 8) / BLOCKSIZE;
 
     // Si el tamaño del mapa de bits en bloques no es exacto, añadimos un bloque más
@@ -63,13 +64,13 @@ int initSB(unsigned int nbloques, unsigned int ninodos) {
     SB.posInodoRaiz = 0;
     SB.posPrimerInodoLibre = 0;
     SB.cantBloquesLibres = nbloques;
-    SB.cantInodosLibres = ninodos;
+    SB.cantInodosLibres = ninodos; 
     SB.totBloques = nbloques;
     SB.totInodos = ninodos;
 
     // Escribimos el superbloque en el dispositivo virtual
     int resultado = bwrite(posSB, &SB);
-    if (resultado != EXITO) {
+    if (resultado == FALLO) {
         fprintf(stderr, "Error en la escritura del SB en el bloque %d: %d\n", posSB, resultado);
         return FALLO;
     }

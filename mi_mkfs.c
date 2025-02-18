@@ -1,5 +1,5 @@
 // mi_mkfs.c
-#include "ficheros_basicos.h"
+#include "ficheros_basico.h"
 #include <string.h>
 
 /**
@@ -30,6 +30,8 @@
         return FALLO;
     }
 
+    // el numero de inodos es algo inexacto,
+    // dividimos entre 4 la cantidad de bloques y dan un número suficientemente alto.
     int ninodos = nbloques / 4; 
 
     // Montar el dispositivo virtual
@@ -77,8 +79,5 @@
         fprintf(stderr, "Error al desmontar el dispositivo virtual.\n");
         return FALLO;
     }
-
-    //Se ha formateado correctamente
-    printf("Dispositivo '%s' formateado correctamente con %d bloques.\n", nombre_dispositivo, nbloques);
     return EXITO;
 }
