@@ -53,6 +53,9 @@ int initSB(unsigned int nbloques, unsigned int ninodos) {
         return FALLO;
     }
 
+    // Calculamos el total de bloques ocupados por los metadatos (SB, MB y AI)
+    int bloquesMetadatos = tamSB + tamMB(nbloques) + tamAI(ninodos);
+
     // Inicializamos el superbloque
     struct superbloque SB;
     SB.posPrimerBloqueMB = posSB + tamSB;
@@ -63,7 +66,7 @@ int initSB(unsigned int nbloques, unsigned int ninodos) {
     SB.posUltimoBloqueDatos = nbloques - 1;
     SB.posInodoRaiz = 0;
     SB.posPrimerInodoLibre = 0;
-    SB.cantBloquesLibres = nbloques;
+    SB.cantBloquesLibres = nbloques - bloquesMetadatos;
     SB.cantInodosLibres = ninodos; 
     SB.totBloques = nbloques;
     SB.totInodos = ninodos;
