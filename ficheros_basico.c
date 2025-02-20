@@ -181,3 +181,137 @@ int initAI() {
     }
     return EXITO;
 }
+
+int escribir_bit(unsigned int nbloque, unsigned int bit){
+    unsigned int posbyte,posbit,nbloqueMB,nbloqueabs;
+    unsigned char bufferMB[BLOCKSIZE];
+    struct superbloque SB;
+    if(bread(posSB,&SB)==FALLO){
+        fprintf(stderr,"Error en la lectura del superbloque\n");
+        bumount();
+        return FALLO;
+    }
+    //Calculamos la posicion del byte del mapa de bits a cambiar
+    posbyte=nbloque/8;
+    posbit=nbloque%8;
+    nbloqueMB=posbyte/BLOCKSIZE;
+    nbloqueabs = SB.posPrimerBloqueMB + nbloqueMB;
+
+    if(bread(nbloqueabs,bufferMB)==FALLO){
+        fprintf(stderr,"Error en la escritura del Mapa de bits\n");
+        bumount();
+        return FALLO;
+    }
+
+    posbyte=posbyte%BLOCKSIZE;
+    unsigned char mascara = 128;    // 10000000
+    mascara >>= posbit;
+    if(bit==1){
+        bufferMB[posbyte] |= mascara;
+    }else if(bit==0){
+        bufferMB[posbyte] &= ~mascara;
+    }else{
+        fprintf(stderr,"Bit leído no valido\n");
+        bumount();
+        return FALLO;
+    }
+
+    if(bwrite(nbloqueabs,bufferMB)==FALLO){
+        fprintf(stderr,"Error en la escritura del Mapa de bits\n");
+        bumount();
+        return FALLO;
+    }
+    return EXITO;
+}
+
+char leer_bit(unsigned int nbloque){
+    unsigned int posbyte,posbit,nbloqueMB,nbloqueabs;
+    struct superbloque SB;
+    unsigned char bufferMB[BLOCKSIZE];
+    if(bread(posSB,&SB)==FALLO){
+        fprintf(stderr,"Error en la lectura del superbloque\n");
+        bumount();
+        return FALLO;
+    }
+
+
+    posbyte=nbloque/8;
+    posbit=nbloque%8;
+    nbloqueMB=posbyte/BLOCKSIZE;
+    nbloqueabs = SB.posPrimerBloqueMB + nbloqueMB;
+
+    if(bread(nbloqueabs,bufferMB)==FALLO){
+        fprintf(stderr,"Error en la escritura del Mapa de bits\n");
+        bumount();
+        return FALLO;
+    }
+    
+    unsigned char mascara = 128; // 10000000
+    mascara >>= posbit;          // desplazamiento de bits a la derecha, los que indique posbit
+    mascara &= bufferMB[posbyte]; // operador AND para bits0
+    mascara >>= (7 - posbit);     // desplazamiento de bits a la derecha 
+                                  // para dejar el 0 o 1 en el extremo derecho y leerlo en decimal
+    return mascara;
+
+}
+
+int reservar_bloque(){
+    unsigned int nbloqueMB,posbyte,posbit,nbloque;
+    unsigned char bufferMB[BLOCKSIZE];
+    unsigned char bufferAux[BLOCKSIZE];
+    
+
+    struct superbloque SB;
+    if(bread(posSB,&SB)==FALLO){
+        fprintf(stderr,"Error en la lectura del superbloque\n");
+        bumount();
+        return FALLO;
+    }
+    if(SB.cantBloquesLibres<=0){
+        fprintf(stderr,"No quedan bloques libres\n");
+        
+        return FALLO;
+    }
+
+    nbloqueMB=0;
+    for(;nbloqueMB<SB.posUltimoBloqueMB;nbloqueMB++){
+        memset(bufferAux, 255, BLOCKSIZE);
+        if(bread(nbloqueMB + SB.posPrimerBloqueMB , bufferMB)==FALLO){
+            fprintf(stderr,"Error al leer el mapa de bits.\n");
+            return FALLO;
+        }
+        if(memcmp(bufferMB,bufferAux,BLOCKSIZE)==0){
+            //Bloque encontrado,sale del for
+            break;
+        }
+
+    }
+    posbyte=0;
+    for(;posbyte!=(BLOCKSIZE/8);posbyte++){
+        if(bufferMB[posbyte]!=255){
+            unsigned char mascara = 128; // 10000000
+            posbit = 0;
+            while (bufferMB[posbyte] & mascara) { // operador AND para bits
+                bufferMB[posbyte] <<= 1;          // desplazamiento de bits a la izquierda
+                posbit++;
+            }
+            break;
+        }
+    }
+    nbloque = (nbloqueMB * BLOCKSIZE + posbyte) * 8 + posbit;
+    if(escribir_bit(nbloque,1)==FALLO){
+        fprintf(stderr,"Error al reservar el bit.\n");
+        return FALLO;
+    }
+    //borrar por si habia basura en el bloque de datos reservado
+    unsigned char borrar[BLOCKSIZE];
+    memset(borrar,0,BLOCKSIZE);
+    if(bwrite(nbloque,borrar)==FALLO){
+        fprintf(stderr,"Error en el borrado del bloque basura.\n");
+        return FALLO;
+
+    }
+
+    SB.cantBloquesLibres--;
+    return nbloque;
+}
