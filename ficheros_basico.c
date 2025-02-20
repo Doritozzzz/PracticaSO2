@@ -268,6 +268,9 @@ char leer_bit(unsigned int nbloque){
         bumount();
         return FALLO;
     }
+
+    // Ajustamos posbyte para que sea relativo al bloque leído
+    posbyte = posbyte % BLOCKSIZE;
     
     // Calculamos la máscara para leer el bit
     unsigned char mascara = 128; 
@@ -504,7 +507,7 @@ int reservar_inodo(unsigned char tipo, unsigned char permisos) {
     }
 
     // Actualizar el superbloque para que apunte al siguiente inodo libre
-    SB.posPrimerInodoLibre = *((unsigned int *) &inodoLibre);
+    SB.posPrimerInodoLibre = inodoLibre.punterosDirectos[0];
     SB.cantInodosLibres--;
 
     // Inicializamos el inodo
@@ -529,7 +532,8 @@ int reservar_inodo(unsigned char tipo, unsigned char permisos) {
         bumount();
         return FALLO;
     }
-
+    //depuracion
+    fprintf(stderr,"Inodo reservado: %d\n",posInodoReservado);
     // Retornar el número de inodo reservado
     return posInodoReservado;
 }
