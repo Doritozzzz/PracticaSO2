@@ -74,6 +74,13 @@
         return FALLO;
     }
 
+    // Creamos directorio raiz
+    if (reservar_inodo('d', 7) == FALLO) {
+        fprintf(stderr, "Error al reservar el inodo del directorio raíz.\n");
+        bumount();
+        return FALLO;
+    }
+
     // Desmontar el dispositivo virtual
     if (bumount() == FALLO) {
         fprintf(stderr, "Error al desmontar el dispositivo virtual.\n");
