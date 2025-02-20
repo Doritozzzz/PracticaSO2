@@ -315,3 +315,42 @@ int reservar_bloque(){
     SB.cantBloquesLibres--;
     return nbloque;
 }
+
+int liberar_bloque(unsigned int nbloque){
+    if(escribir_bit(nbloque,0)==FALLO){
+        fprintf(stderr,"Error en la liberacion de bit.\n");
+        return FALLO;
+    }
+    struct superbloque SB;
+    if(bread(posSB,&SB)==FALLO){
+        fprintf(stderr,"Error en la lectura del superbloque\n");
+        bumount();
+        return FALLO;
+    }
+    SB.cantBloquesLibres++;
+    return EXITO;
+}
+int escribir_inodo(unsigned int ninodo, struct inodo *inodo){
+    unsigned int nbloqueAI,nbloqueabs,posinodo;
+    struct inodo inodos[BLOCKSIZE/INODOSIZE];
+    struct superbloque SB;
+    if(bread(posSB,&SB)==FALLO){
+        fprintf(stderr,"Error en la lectura del superbloque\n");
+        bumount();
+        return FALLO;
+    }
+    nbloqueAI=(ninodo*INODOSIZE)/BLOCKSIZE;
+    nbloqueabs=nbloqueAI+SB.posPrimerBloqueAI;
+    if(bread(nbloqueabs,inodos)==FALLO){
+        fprintf(stderr,"Error en la lectura del inodo.\n");
+        return FALLO;
+    }
+    posinodo=ninodo%(BLOCKSIZE/INODOSIZE);
+    inodos[posinodo]=*inodo;
+    if(bwrite(nbloqueabs,inodos)==FALLO){
+        fprintf(stderr,"Error en la escritura del inodo.\n");
+        return FALLO;
+    }
+    return EXITO;
+
+}
