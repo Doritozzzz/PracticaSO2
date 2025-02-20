@@ -462,10 +462,74 @@ int leer_inodo(unsigned int ninodo, struct inodo *inodo){
 
     // Calculamos la posición del inodo en el bloque de inodos
     posinodo = ninodo % (BLOCKSIZE / INODOSIZE);
-    
+
     // Copiamos el inodo leído en el inodo pasado por parámetro
     *inodo = inodos [posinodo];
     
     // Retornamos EXITO si se ha leído correctamente
     return EXITO;
+}
+
+/**
+ * reservar_inodo --> Función para reservar un inodo en el array de inodos
+ * @param tipo: Tipo de inodo a reservar ('f': fichero, 'd': directorio)
+ * @param permisos: Permisos del inodo a reservar
+ * @return Número de inodo reservado
+ */
+int reservar_inodo(unsigned char tipo, unsigned char permisos) {
+    // Definimos las variables necesarias
+    unsigned int posInodoReservado;
+
+    // Leemos el superbloque
+    struct superbloque SB;
+    if(bread(posSB,&SB)==FALLO){
+        fprintf(stderr,"Error en la lectura del superbloque\n");
+        bumount();
+        return FALLO;
+    }
+
+    // Verificamos si hay inodos libres
+    if (SB.cantInodosLibres == 0) {
+        fprintf(stderr, "Error, no hay inodos libres.\n");
+        return FALLO;
+    }
+
+    // Guardamos el número del primer inodo libre antes de modificarlo
+    posInodoReservado = SB.posPrimerInodoLibre;
+
+    // Leemos el inodo que estaba marcado como libre
+    struct inodo inodoLibre;
+    if (leer_inodo(posInodoReservado, &inodoLibre) == FALLO) {
+        return FALLO;
+    }
+
+    // Actualizar el superbloque para que apunte al siguiente inodo libre
+    SB.posPrimerInodoLibre = *((unsigned int *) &inodoLibre);
+    SB.cantInodosLibres--;
+
+    // Inicializamos el inodo
+    struct inodo nuevoInodo;
+    memset(&nuevoInodo, 0, sizeof(struct inodo));
+    nuevoInodo.tipo = tipo;
+    nuevoInodo.permisos = permisos;
+    nuevoInodo.nlinks = 1;
+    nuevoInodo.tamEnBytesLog = 0;
+    nuevoInodo.numBloquesOcupados = 0;
+
+    // Asignar los timestamps
+    nuevoInodo.atime = nuevoInodo.mtime = nuevoInodo.ctime = nuevoInodo.btime = time(NULL);
+
+    // Escribir el inodo en la posición reservada
+    if (escribir_inodo(posInodoReservado, &nuevoInodo) == FALLO) {
+        return FALLO;
+    }
+
+    if(bwrite(posSB,&SB)==FALLO){
+        fprintf(stderr,"Error en la escritura del superbloque\n");
+        bumount();
+        return FALLO;
+    }
+
+    // Retornar el número de inodo reservado
+    return posInodoReservado;
 }
