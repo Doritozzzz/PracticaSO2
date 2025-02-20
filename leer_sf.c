@@ -1,28 +1,35 @@
 // leer_sf.cS
+
 #include "ficheros_basico.h"
+#include <time.h>
 
 /**
- * Programa para leer el superbloque y la lista enlazada de inodos libres
- * Para usarlo, ejecutar: ./leer_sf <nombre_dispositivo>
+ * Programa para leer el superbloque, mostrar el mapa de bits, reservar/liberar bloques
+ * y mostrar información del inodo raíz.
+ * Uso: ./leer_sf <nombre_dispositivo>
  */
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
+    if (argc != 2) {
+        fprintf(stderr, "Uso: %s <nombre_dispositivo>\n", argv[0]);
+        return FALLO;
+    }
+
     char *nombre_dispositivo = argv[1];
+
     // Montar el dispositivo virtual
     if (bmount(nombre_dispositivo) == FALLO) {
         fprintf(stderr, "Error en el montaje del dispositivo virtual.\n");
         return FALLO;
     }
 
-    
-    printf("DATOS DEL SUPERBLOQUE:\n");
-    
     struct superbloque SB;
-    if(bread(posSB,&SB)==FALLO){
-        fprintf(stderr,"Error en la lectura del superbloque\n");
+    if (bread(posSB, &SB) == FALLO) {
+        fprintf(stderr, "Error en la lectura del superbloque\n");
         bumount();
         return FALLO;
     }
-    
+
+    printf("\n===== DATOS DEL SUPERBLOQUE =====\n");
     printf("posPrimerBloqueMB = %d\n", SB.posPrimerBloqueMB);
     printf("posUltimoBloqueMB = %d\n", SB.posUltimoBloqueMB);
     printf("posPrimerBloqueAI = %d\n", SB.posPrimerBloqueAI);
@@ -37,39 +44,75 @@ int main(int argc, char **argv){
     printf("totInodos = %d\n", SB.totInodos);
     printf("\n");
 
-    printf("sizeof struct superbloque is: %lu\n",sizeof(struct superbloque));
-    printf ("sizeof struct inodo is: %lu\n", sizeof(struct inodo));
+    printf("sizeof struct superbloque: %lu\n", sizeof(struct superbloque));
+    printf("sizeof struct inodo: %lu\n", sizeof(struct inodo));
     printf("\n");
 
-
-    printf("LISTA ENLAZADA DE INODOS LIBRES:\n");
-
-    unsigned int indice = SB.posPrimerInodoLibre;
-    int inodosPorBloque = BLOCKSIZE / INODOSIZE;
-    struct inodo inodos[inodosPorBloque];
-
-    while (indice != UINT_MAX) {
-        // Determinamos el bloque del AI y el offset dentro de ese bloque
-        unsigned int bloqueAI = SB.posPrimerBloqueAI + (indice / inodosPorBloque);
-        unsigned int offset = indice % inodosPorBloque;
-
-        if (bread(bloqueAI, (char *)inodos) == FALLO) {
-            fprintf(stderr, "Error al leer el bloque de inodos %u.\n", bloqueAI);
-            bumount();
-            return FALLO;
-        }
-
-        printf("Inodo %u -> punterosDirectos[0] = %u\n", indice, inodos[offset].punterosDirectos[0]);
-        // El valor en punterosDirectos[0] es el índice del siguiente inodo libre
-        indice = inodos[offset].punterosDirectos[0];
-    }
+    printf("===== MAPA DE BITS =====\n");
+    unsigned int bloques[] = {SB.posPrimerBloqueMB, SB.posUltimoBloqueMB, 
+                              SB.posPrimerBloqueAI, SB.posUltimoBloqueAI, 
+                              SB.posPrimerBloqueDatos, SB.posUltimoBloqueDatos};
     
+    for (int i = 0; i < 6; i++) {
+        int bit = leer_bit(bloques[i]);
+        printf("[leer_bit(%u)] → %d\n", bloques[i], bit);
+    }
+    printf("\n");
 
-    if(bumount(nombre_dispositivo)==FALLO){
-        fprintf(stderr,"Error en el cierre del dispositivo virtual.\n");
+    printf("===== RESERVAMOS UN BLOQUE Y LUEGO LO LIBERAMOS =====\n");
+    printf("SB.cantBloquesLibres antes = %d\n", SB.cantBloquesLibres);
+
+    int bloqueReservado = reservar_bloque();
+    if (bloqueReservado == -1) {
+        fprintf(stderr, "Error al reservar un bloque.\n");
+    } else {
+        printf("Se ha reservado el bloque físico nº %d\n", bloqueReservado);
+        printf("SB.cantBloquesLibres después de reservar = %d\n", SB.cantBloquesLibres);
+
+        if (liberar_bloque(bloqueReservado) == -1) {
+            fprintf(stderr, "Error al liberar el bloque %d.\n", bloqueReservado);
+        } else {
+            printf("Bloque %d liberado correctamente.\n", bloqueReservado);
+            printf("SB.cantBloquesLibres después de liberar = %d\n", SB.cantBloquesLibres);
+        }
+    }
+    printf("\n");
+
+    printf("===== DATOS DEL INODO DEL DIRECTORIO RAÍZ =====\n");
+    struct inodo inodoRaiz;
+    if (leer_inodo(SB.posInodoRaiz, &inodoRaiz) == -1) {
+        fprintf(stderr, "Error al leer el inodo raíz.\n");
+    } else {
+        printf("tipo: %c\n", inodoRaiz.tipo);
+        printf("permisos: %d\n", inodoRaiz.permisos);
+
+        char atime[80], mtime[80], ctime[80], btime[80];
+        struct tm *ts;
+        
+        ts = localtime(&inodoRaiz.atime);
+        strftime(atime, sizeof(atime), "%a %Y-%m-%d %H:%M:%S", ts);
+        ts = localtime(&inodoRaiz.mtime);
+        strftime(mtime, sizeof(mtime), "%a %Y-%m-%d %H:%M:%S", ts);
+        ts = localtime(&inodoRaiz.ctime);
+        strftime(ctime, sizeof(ctime), "%a %Y-%m-%d %H:%M:%S", ts);
+        ts = localtime(&inodoRaiz.btime);
+        strftime(btime, sizeof(btime), "%a %Y-%m-%d %H:%M:%S", ts);
+
+        printf("atime: %s\n", atime);
+        printf("mtime: %s\n", mtime);
+        printf("ctime: %s\n", ctime);
+        printf("btime: %s\n", btime);
+        printf("nlinks: %d\n", inodoRaiz.nlinks);
+        printf("tamEnBytesLog: %d\n", inodoRaiz.tamEnBytesLog);
+        printf("numBloquesOcupados: %d\n", inodoRaiz.numBloquesOcupados);
+    }
+    printf("\n");
+
+    // Desmontar el dispositivo
+    if (bumount(nombre_dispositivo) == FALLO) {
+        fprintf(stderr, "Error en el cierre del dispositivo virtual.\n");
         return FALLO;
     }
 
     return EXITO;
-
 }
