@@ -182,30 +182,43 @@ int initAI() {
     return EXITO;
 }
 
+/**
+ * escribir_bit --> Función para escribir un bit en el mapa de bits
+ * @param nbloque: Número de bloque a escribir
+ * @param bit: Valor del bit a escribir (0 o 1)
+ * @return EXITO si se ha escrito correctamente, FALLO en caso contrario
+ */
 int escribir_bit(unsigned int nbloque, unsigned int bit){
+    // Definimos las variables necesarias
     unsigned int posbyte,posbit,nbloqueMB,nbloqueabs;
     unsigned char bufferMB[BLOCKSIZE];
+
+    // Leemos el superbloque
     struct superbloque SB;
     if(bread(posSB,&SB)==FALLO){
         fprintf(stderr,"Error en la lectura del superbloque\n");
         bumount();
         return FALLO;
     }
+
     //Calculamos la posicion del byte del mapa de bits a cambiar
-    posbyte=nbloque/8;
-    posbit=nbloque%8;
-    nbloqueMB=posbyte/BLOCKSIZE;
+    posbyte = nbloque / 8;
+    posbit = nbloque % 8;
+    nbloqueMB = posbyte / BLOCKSIZE;
     nbloqueabs = SB.posPrimerBloqueMB + nbloqueMB;
 
+    // Leemos el bloque del mapa de bits
     if(bread(nbloqueabs,bufferMB)==FALLO){
         fprintf(stderr,"Error en la escritura del Mapa de bits\n");
         bumount();
         return FALLO;
     }
 
-    posbyte=posbyte%BLOCKSIZE;
+    // Calculamos la máscara para modificar el bit
+    posbyte = posbyte % BLOCKSIZE;
     unsigned char mascara = 128;    // 10000000
     mascara >>= posbit;
+
     if(bit==1){
         bufferMB[posbyte] |= mascara;
     }else if(bit==0){
@@ -216,6 +229,7 @@ int escribir_bit(unsigned int nbloque, unsigned int bit){
         return FALLO;
     }
 
+    // Escribimos el bloque del mapa de bits modificado
     if(bwrite(nbloqueabs,bufferMB)==FALLO){
         fprintf(stderr,"Error en la escritura del Mapa de bits\n");
         bumount();
@@ -224,55 +238,73 @@ int escribir_bit(unsigned int nbloque, unsigned int bit){
     return EXITO;
 }
 
+/**
+ * leer_bit --> Función para leer un bit del mapa de bits
+ * @param nbloque: Número de bloque a leer
+ * @return Valor del bit leído (0 o 1)
+ */
 char leer_bit(unsigned int nbloque){
+    // Definimos las variables necesarias
     unsigned int posbyte,posbit,nbloqueMB,nbloqueabs;
     struct superbloque SB;
     unsigned char bufferMB[BLOCKSIZE];
+
+    // Leemos el superbloque
     if(bread(posSB,&SB)==FALLO){
         fprintf(stderr,"Error en la lectura del superbloque\n");
         bumount();
         return FALLO;
     }
 
-
-    posbyte=nbloque/8;
-    posbit=nbloque%8;
-    nbloqueMB=posbyte/BLOCKSIZE;
+    // Calculamos la posición del byte del mapa de bits a leer
+    posbyte = nbloque / 8;
+    posbit = nbloque % 8;
+    nbloqueMB = posbyte / BLOCKSIZE;
     nbloqueabs = SB.posPrimerBloqueMB + nbloqueMB;
 
+    // Leemos el bloque del mapa de bits
     if(bread(nbloqueabs,bufferMB)==FALLO){
         fprintf(stderr,"Error en la escritura del Mapa de bits\n");
         bumount();
         return FALLO;
     }
     
-    unsigned char mascara = 128; // 10000000
-    mascara >>= posbit;          // desplazamiento de bits a la derecha, los que indique posbit
-    mascara &= bufferMB[posbyte]; // operador AND para bits0
-    mascara >>= (7 - posbit);     // desplazamiento de bits a la derecha 
-                                  // para dejar el 0 o 1 en el extremo derecho y leerlo en decimal
-    return mascara;
+    // Calculamos la máscara para leer el bit
+    unsigned char mascara = 128; 
+    mascara >>= posbit;
+    mascara &= bufferMB[posbyte];
+    mascara >>= (7 - posbit);
 
+    // Devolvemos el valor del bit leído
+    return mascara;
 }
 
+/**
+ * reservar_bloque --> Función para reservar un bloque en el mapa de bits
+ * @return Número de bloque reservado
+ */
 int reservar_bloque(){
+    // Definimos las variables necesarias
     unsigned int nbloqueMB,posbyte,posbit,nbloque;
     unsigned char bufferMB[BLOCKSIZE];
     unsigned char bufferAux[BLOCKSIZE];
     
-
+    // Leemos el superbloque
     struct superbloque SB;
     if(bread(posSB,&SB)==FALLO){
         fprintf(stderr,"Error en la lectura del superbloque\n");
         bumount();
         return FALLO;
     }
+
+    // Comprobamos si quedan bloques libres
     if(SB.cantBloquesLibres<=0){
         fprintf(stderr,"No quedan bloques libres\n");
         
         return FALLO;
     }
 
+    // Buscamos un bloque libre en el mapa de bits
     nbloqueMB=0;
     for(;nbloqueMB<SB.posUltimoBloqueMB;nbloqueMB++){
         memset(bufferAux, 255, BLOCKSIZE);
@@ -280,30 +312,40 @@ int reservar_bloque(){
             fprintf(stderr,"Error al leer el mapa de bits.\n");
             return FALLO;
         }
+
+        // Comparamos el bufferMB con el bufferAux para encontrar un bloque libre
         if(memcmp(bufferMB,bufferAux,BLOCKSIZE)==0){
-            //Bloque encontrado,sale del for
+            // Bloque encontrado, sale del for
             break;
         }
 
     }
+
+    // Calculamos la posición del byte y bit del bloque libre
     posbyte=0;
     for(;posbyte!=(BLOCKSIZE/8);posbyte++){
         if(bufferMB[posbyte]!=255){
-            unsigned char mascara = 128; // 10000000
+            unsigned char mascara = 128;
             posbit = 0;
-            while (bufferMB[posbyte] & mascara) { // operador AND para bits
-                bufferMB[posbyte] <<= 1;          // desplazamiento de bits a la izquierda
+            // Buscamos el bit libre
+            while (bufferMB[posbyte] & mascara) {
+                bufferMB[posbyte] <<= 1;
                 posbit++;
             }
             break;
         }
     }
+
+    // Calculamos el número de bloque reservado
     nbloque = (nbloqueMB * BLOCKSIZE + posbyte) * 8 + posbit;
+
+    // Escribimos el bit en el mapa de bits
     if(escribir_bit(nbloque,1)==FALLO){
         fprintf(stderr,"Error al reservar el bit.\n");
         return FALLO;
     }
-    //borrar por si habia basura en el bloque de datos reservado
+
+    // Borramos por si habia basura en el bloque de datos reservado
     unsigned char borrar[BLOCKSIZE];
     memset(borrar,0,BLOCKSIZE);
     if(bwrite(nbloque,borrar)==FALLO){
@@ -312,65 +354,118 @@ int reservar_bloque(){
 
     }
 
+    // Actualizamos el superbloque
     SB.cantBloquesLibres--;
+
+    // Retornamos el número de bloque reservado
     return nbloque;
 }
 
+/**
+ * liberar_bloque --> Función para liberar un bloque en el mapa de bits
+ * @param nbloque: Número de bloque a liberar
+ * @return EXITO si se ha liberado correctamente, FALLO en caso contrario
+ */
 int liberar_bloque(unsigned int nbloque){
+    // Escribimos el bit en el mapa de bits
     if(escribir_bit(nbloque,0)==FALLO){
         fprintf(stderr,"Error en la liberacion de bit.\n");
         return FALLO;
     }
+
+    // Leemos el superbloque
     struct superbloque SB;
     if(bread(posSB,&SB)==FALLO){
         fprintf(stderr,"Error en la lectura del superbloque\n");
         bumount();
         return FALLO;
     }
+
+    // Sumamos un bloque libre al superbloque
     SB.cantBloquesLibres++;
+
+    // Retornamos EXITO si se ha liberado correctamente
     return EXITO;
 }
+
+/**
+ * escribir_inodo --> Función para escribir un inodo en el array de inodos
+ * @param ninodo: Número de inodo a escribir
+ * @param inodo: Puntero al inodo a escribir
+ * @return EXITO si se ha escrito correctamente, FALLO en caso contrario
+ */
 int escribir_inodo(unsigned int ninodo, struct inodo *inodo){
+    // Definimos las variables necesarias
     unsigned int nbloqueAI,nbloqueabs,posinodo;
     struct inodo inodos[BLOCKSIZE/INODOSIZE];
+
+    // Leemos el superbloque
     struct superbloque SB;
     if(bread(posSB,&SB)==FALLO){
         fprintf(stderr,"Error en la lectura del superbloque\n");
         bumount();
         return FALLO;
     }
-    nbloqueAI=(ninodo*INODOSIZE)/BLOCKSIZE;
-    nbloqueabs=nbloqueAI+SB.posPrimerBloqueAI;
+
+    // Calculamos la posición del inodo en el array de inodos
+    nbloqueAI = (ninodo * INODOSIZE) / BLOCKSIZE;
+    nbloqueabs = nbloqueAI + SB.posPrimerBloqueAI;
+
+    // Leemos el bloque del array de inodos
     if(bread(nbloqueabs,inodos)==FALLO){
         fprintf(stderr,"Error en la lectura del inodo.\n");
         return FALLO;
     }
-    posinodo=ninodo%(BLOCKSIZE/INODOSIZE);
-    inodos[posinodo]=*inodo;
+
+    // Calculamos la posición del inodo en el bloque de inodos
+    posinodo = ninodo % (BLOCKSIZE / INODOSIZE);
+    inodos [posinodo] = *inodo;
+
+    // Escribimos el inodo en el array de inodos
     if(bwrite(nbloqueabs,inodos)==FALLO){
         fprintf(stderr,"Error en la escritura del inodo.\n");
         return FALLO;
     }
-    return EXITO;
 
+    // Retornamos EXITO si se ha escrito correctamente
+    return EXITO;
 }
+
+/**
+ * leer_inodo --> Función para leer un inodo del array de inodos
+ * @param ninodo: Número de inodo a leer
+ * @param inodo: Puntero al inodo leído
+ * @return EXITO si se ha leído correctamente, FALLO en caso contrario
+ */
 int leer_inodo(unsigned int ninodo, struct inodo *inodo){
+    // Definimos las variables necesarias
     unsigned int nbloqueAI,nbloqueabs,posinodo;
     struct inodo inodos[BLOCKSIZE/INODOSIZE];
+
+    // Leemos el superbloque
     struct superbloque SB;
     if(bread(posSB,&SB)==FALLO){
         fprintf(stderr,"Error en la lectura del superbloque\n");
         bumount();
         return FALLO;
     }
-    nbloqueAI=(ninodo*INODOSIZE)/BLOCKSIZE;
-    nbloqueabs=nbloqueAI+SB.posPrimerBloqueAI;
+
+    // Calculamos la posición del inodo en el array de inodos
+    nbloqueAI = (ninodo * INODOSIZE) / BLOCKSIZE;
+    nbloqueabs = nbloqueAI + SB.posPrimerBloqueAI;
+
+    // Leemos el bloque del array de inodos
     if(bread(nbloqueabs,inodos)==FALLO){
         fprintf(stderr,"Error en la lectura del inodo.\n");
         return FALLO;
     }
-    posinodo=ninodo%(BLOCKSIZE/INODOSIZE);
-    *inodo=inodos[posinodo];
+
+    // Calculamos la posición del inodo en el bloque de inodos
+    posinodo = ninodo % (BLOCKSIZE / INODOSIZE);
     
+    // Copiamos el inodo leído en el inodo pasado por parámetro
+    *inodo = inodos [posinodo];
+    
+    // Retornamos EXITO si se ha leído correctamente
     return EXITO;
 }
