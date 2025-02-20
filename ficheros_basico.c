@@ -354,3 +354,23 @@ int escribir_inodo(unsigned int ninodo, struct inodo *inodo){
     return EXITO;
 
 }
+int leer_inodo(unsigned int ninodo, struct inodo *inodo){
+    unsigned int nbloqueAI,nbloqueabs,posinodo;
+    struct inodo inodos[BLOCKSIZE/INODOSIZE];
+    struct superbloque SB;
+    if(bread(posSB,&SB)==FALLO){
+        fprintf(stderr,"Error en la lectura del superbloque\n");
+        bumount();
+        return FALLO;
+    }
+    nbloqueAI=(ninodo*INODOSIZE)/BLOCKSIZE;
+    nbloqueabs=nbloqueAI+SB.posPrimerBloqueAI;
+    if(bread(nbloqueabs,inodos)==FALLO){
+        fprintf(stderr,"Error en la lectura del inodo.\n");
+        return FALLO;
+    }
+    posinodo=ninodo%(BLOCKSIZE/INODOSIZE);
+    *inodo=inodos[posinodo];
+    
+    return EXITO;
+}
