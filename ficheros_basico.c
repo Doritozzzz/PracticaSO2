@@ -118,7 +118,7 @@ int initMB(unsigned int nbloques, unsigned int ninodos) {
             return FALLO;
         }
     }
-    
+
     // Liberamos la memoria del buffer del MB
     free(MBtotal);
     return EXITO;
@@ -313,7 +313,7 @@ int reservar_bloque(){
         }
 
         // Comparamos el bufferMB con el bufferAux para encontrar un bloque libre
-        if(memcmp(bufferMB,bufferAux,BLOCKSIZE)==0){
+        if(memcmp(bufferMB,bufferAux,BLOCKSIZE)!=0){
             // Bloque encontrado, sale del for
             break;
         }
@@ -322,7 +322,7 @@ int reservar_bloque(){
 
     // Calculamos la posición del byte y bit del bloque libre
     posbyte=0;
-    for(;posbyte!=(BLOCKSIZE/8);posbyte++){
+    for(; posbyte < BLOCKSIZE; posbyte++){
         if(bufferMB[posbyte]!=255){
             unsigned char mascara = 128;
             posbit = 0;
