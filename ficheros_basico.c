@@ -84,47 +84,43 @@ int initSB(unsigned int nbloques, unsigned int ninodos) {
 
 /**
  * initMB --> Función para inicializar el mapa de bits, pone a 1 los bloques ocupados por el SB, MB y AI
+ * @param nbloques: Número de bloques del dispositivo
+ * @param ninodos: Número de inodos del dispositivo (ninodos=nbloques/4)
  * @return EXITO si se ha inicializado correctamente, FALLO en caso contrario
  */
 int initMB(unsigned int nbloques, unsigned int ninodos) {
-    // Calculamos el número de bloques que ocupa el MB
+    // Calculamos el tamaño del mapa de bits en bloques
     int numBloquesMB = tamMB(nbloques);
-    
-    // Reservamos un buffer para un bloque del MB
-    unsigned char *bufferMB = malloc(BLOCKSIZE);
-    if (bufferMB == NULL) {
+    int totalBytesMB = numBloquesMB * BLOCKSIZE;
+
+    // Reservamos un buffer para todo el mapa de bits
+    unsigned char *MBtotal = malloc(totalBytesMB);
+    if (MBtotal == NULL) {
         fprintf(stderr, "Error al reservar memoria para el MB: %s\n", strerror(errno));
         return FALLO;
     }
 
-    // Inicializamos el buffer a 0s
-    memset(bufferMB, 0, BLOCKSIZE);
+    memset(MBtotal, 0, totalBytesMB);
 
-    // Calculamos el total de bloques ocupados por los metadatos (SB, MB y AI)
     int bloquesMetadatos = tamSB + numBloquesMB + tamAI(ninodos);
 
-    // Marcamos los bits correspondientes en el bufferMB
+    // Marcamos los bits de los bloques ocupados (0 a bloquesMetadatos-1)
     for (int i = 0; i < bloquesMetadatos; i++) {
-        /**
-         * Explicación de la operación:\
-         * 1. Dividimos i entre 8 para obtener el índice del byte en el bufferMB --> si i=0, byte=0; si i=8, byte=1; si i=9, byte=1; ...
-         * 2. Calculamos el resto de la división para obtener el bit que queremos marcar en el byte --> si i=0, bit=0; si i=8, bit=0; si i=9, bit=1; ...
-         * 3. Marcamos el bit correspondiente en el byte con un OR bit a bit 
-         */
-        bufferMB[i / 8] |= (1 << (i % 8));
+        // Usando la convención: bit 0 = (128 >> 0), bit 1 = (128 >> 1), etc.
+        MBtotal[i / 8] |= (128 >> (i % 8));
     }
 
-    // Escribimos el MB en el dispositivo virtual
+    // Escribimos cada bloque del MB en el dispositivo virtual
     for (int i = 0; i < numBloquesMB; i++) {
-        if (bwrite(posSB + tamSB + i, bufferMB) == FALLO) {
+        if (bwrite(posSB + tamSB + i, MBtotal + i * BLOCKSIZE) == FALLO) {
             fprintf(stderr, "Error al escribir el MB en el bloque %d\n", posSB + tamSB + i);
-            free(bufferMB);
+            free(MBtotal);
             return FALLO;
         }
     }
-
-    // Liberamos el bufferMB y retornamos EXITO
-    free(bufferMB);
+    
+    // Liberamos la memoria del buffer del MB
+    free(MBtotal);
     return EXITO;
 }
 
@@ -532,8 +528,7 @@ int reservar_inodo(unsigned char tipo, unsigned char permisos) {
         bumount();
         return FALLO;
     }
-    //depuracion
-    fprintf(stderr,"Inodo reservado: %d\n",posInodoReservado);
+    
     // Retornar el número de inodo reservado
     return posInodoReservado;
 }
