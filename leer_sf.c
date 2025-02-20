@@ -1,5 +1,4 @@
-// leer_sf.cS
-
+// leer_sf.c
 #include "ficheros_basico.h"
 #include <time.h>
 
@@ -63,24 +62,53 @@ int main(int argc, char **argv) {
     printf("SB.cantBloquesLibres antes = %d\n", SB.cantBloquesLibres);
 
     int bloqueReservado = reservar_bloque();
-    if (bloqueReservado == -1) {
+    if (bloqueReservado == FALLO) {
         fprintf(stderr, "Error al reservar un bloque.\n");
     } else {
+        // Actualizar SB desde disco
+        if (bread(posSB, &SB) == FALLO) {
+            fprintf(stderr, "Error al refrescar superbloque\n");
+            bumount();
+            return FALLO;
+        }
         printf("Se ha reservado el bloque físico nº %d\n", bloqueReservado);
         printf("SB.cantBloquesLibres después de reservar = %d\n", SB.cantBloquesLibres);
 
-        if (liberar_bloque(bloqueReservado) == -1) {
+        if (liberar_bloque(bloqueReservado) == FALLO) {
             fprintf(stderr, "Error al liberar el bloque %d.\n", bloqueReservado);
         } else {
+            // Actualizar SB desde disco
+            if (bread(posSB, &SB) == FALLO) {
+                fprintf(stderr, "Error al refrescar superbloque\n");
+                bumount();
+                return FALLO;
+            }
             printf("Bloque %d liberado correctamente.\n", bloqueReservado);
             printf("SB.cantBloquesLibres después de liberar = %d\n", SB.cantBloquesLibres);
         }
     }
     printf("\n");
 
+    printf("===== RESERVAMOS UN INODO =====\n");
+    printf("SB.cantInodosLibres antes = %d\n", SB.cantInodosLibres);
+    int inodoReservado = reservar_inodo('d', 6); // Directorio con permisos 6
+    if (inodoReservado == FALLO) {
+        fprintf(stderr, "Error al reservar inodo.\n");
+    } else {
+        // Actualizar SB desde disco
+        if (bread(posSB, &SB) == FALLO) {
+            fprintf(stderr, "Error al refrescar superbloque\n");
+            bumount();
+            return FALLO;
+        }
+        printf("Inodo reservado: %d\n", inodoReservado);
+        printf("SB.cantInodosLibres después = %d\n", SB.cantInodosLibres);
+    }
+    printf("\n");
+
     printf("===== DATOS DEL INODO DEL DIRECTORIO RAÍZ =====\n");
     struct inodo inodoRaiz;
-    if (leer_inodo(SB.posInodoRaiz, &inodoRaiz) == -1) {
+    if (leer_inodo(SB.posInodoRaiz, &inodoRaiz) == FALLO) {
         fprintf(stderr, "Error al leer el inodo raíz.\n");
     } else {
         printf("tipo: %c\n", inodoRaiz.tipo);

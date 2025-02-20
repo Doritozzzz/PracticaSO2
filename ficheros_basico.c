@@ -355,6 +355,10 @@ int reservar_bloque(){
 
     // Actualizamos el superbloque
     SB.cantBloquesLibres--;
+    if (bwrite(posSB, &SB) == FALLO) {
+        fprintf(stderr, "Error al escribir el superbloque\n");
+        return FALLO;
+    }
 
     // Retornamos el número de bloque reservado
     return nbloque;
@@ -382,6 +386,10 @@ int liberar_bloque(unsigned int nbloque){
 
     // Sumamos un bloque libre al superbloque
     SB.cantBloquesLibres++;
+    if (bwrite(posSB, &SB) == FALLO) {
+        fprintf(stderr, "Error al escribir el superbloque\n");
+        return FALLO;
+    }
 
     // Retornamos EXITO si se ha liberado correctamente
     return EXITO;
