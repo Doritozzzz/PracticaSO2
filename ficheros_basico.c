@@ -573,4 +573,52 @@ int obtener_nRangoBL(struct inodo *inodo, unsigned int nblogico, unsigned int *p
     // Retornamos el rango de bloque lógico obtenido
     return nRangoBL;
 }
-    
+
+/**
+ * obtener_indice --> Función para obtener el índice de un bloque lógico en un bloque físico
+ * @param nblogico: Número de bloque lógico a obtener
+ * @param nivel_punteros: Nivel de punteros a obtener
+ * @return Índice del bloque lógico en el bloque físico
+ */
+int obtener_indice(unsigned int nblogico, int nivel_punteros) {
+    // Comprobamos el nivel de punteros
+    if (nblogico < DIRECTOS) {
+        return nblogico;
+    } else if (nblogico < INDIRECTOS0) {
+        return nblogico - DIRECTOS;
+    } else if (nblogico < INDIRECTOS1) {
+        if (nivel_punteros == 2) {
+            return (nblogico - INDIRECTOS0) / NPUNTEROS;
+        } else if (nivel_punteros == 1) {
+            return (nblogico - INDIRECTOS0) % NPUNTEROS;
+        } else {
+            fprintf(stderr, "Error: nivel_punteros incorrecto (%d) para nblogico %u en rango INDIRECTOS0\n", nivel_punteros, nblogico);
+            return FALLO;
+        }
+    } else if (nblogico < INDIRECTOS2) {
+        if (nivel_punteros == 3) {
+            return (nblogico - INDIRECTOS1) / (NPUNTEROS * NPUNTEROS);
+        } else if (nivel_punteros == 2) {
+            return ((nblogico - INDIRECTOS1) % (NPUNTEROS * NPUNTEROS)) / NPUNTEROS;
+        } else if (nivel_punteros == 1) {
+            return ((nblogico - INDIRECTOS1) % (NPUNTEROS * NPUNTEROS)) % NPUNTEROS;
+        } else {
+            fprintf(stderr, "Error: nivel_punteros incorrecto (%d) para nblogico %u en rango INDIRECTOS1\n", nivel_punteros, nblogico);
+            return FALLO;
+        }
+    } else {
+        fprintf(stderr, "El bloque lógico %u está fuera de rango\n", nblogico);
+        return FALLO;
+    }
+}
+
+/**
+ * traducir_bloque_inodo --> Función para traducir un bloque lógico de un inodo a un bloque físico
+ * @param inodo: Número de inodo a traducir
+ * @param nblogico: Número de bloque lógico a traducir
+ * @param reservar: Indica si se debe reservar el bloque físico
+ * @return Número de bloque físico traducido
+ */
+int traducir_bloque_inodo(unsigned int ninodo, unsigned int nblogico, char reservar){
+    return 0;
+}
