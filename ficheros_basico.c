@@ -540,3 +540,37 @@ int reservar_inodo(unsigned char tipo, unsigned char permisos) {
     // Retornar el número de inodo reservado
     return posInodoReservado;
 }
+
+/**
+ * obtener_nRangoBL --> Función para obtener el rango de bloques lógicos de un inodo
+ * @param inodo: Inodo del que obtener el rango de bloques lógicos
+ * @param nblogico: Número de bloque lógico a obtener
+ * @param ptr: Puntero al bloque lógico obtenido
+ * @return nRangoBL: Número de rango de bloque lógico obtenido
+ */
+int obtener_nRangoBL(struct inodo *inodo, unsigned int nblogico, unsigned int *ptr){
+    // Definimos las variables necesarias
+    unsigned int nRangoBL;
+
+    // Comprobamos si el bloque lógico está en un puntero directo
+    if (nblogico < DIRECTOS) {
+        nRangoBL = 0;
+        *ptr = inodo->punterosDirectos[nblogico];
+    } else if (nblogico < INDIRECTOS0) {
+        nRangoBL = 1;
+        *ptr = inodo->punterosIndirectos[0];
+    } else if (nblogico < INDIRECTOS1) {
+        nRangoBL = 2;
+        *ptr = inodo->punterosIndirectos[1];
+    } else if (nblogico < INDIRECTOS2) {
+        nRangoBL = 3;
+        *ptr = inodo->punterosIndirectos[2];
+    } else {
+        fprintf(stderr, "Error: número de bloque lógico fuera de rango\n");
+        return FALLO;
+    }
+
+    // Retornamos el rango de bloque lógico obtenido
+    return nRangoBL;
+}
+    
