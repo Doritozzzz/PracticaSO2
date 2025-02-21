@@ -7,6 +7,12 @@
 
 #define INODOSIZE 128 // tamaño en bytes de un inodo
 
+#define NPUNTEROS (BLOCKSIZE / sizeof(unsigned int))   // 256 punteros por bloque
+#define DIRECTOS 12
+#define INDIRECTOS0 (NPUNTEROS + DIRECTOS)    // 268
+#define INDIRECTOS1 (NPUNTEROS * NPUNTEROS + INDIRECTOS0)    // 65.804
+#define INDIRECTOS2 (NPUNTEROS * NPUNTEROS * NPUNTEROS + INDIRECTOS1) // 16.843.020
+
 
 struct inodo {     // comprobar que ocupa 128 bytes haciendo un sizeof(inodo)!!!
     unsigned char tipo;     // Tipo ('l':libre, 'd':directorio o 'f':fichero)
