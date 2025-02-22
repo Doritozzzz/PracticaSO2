@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
     printf("sizeof struct inodo: %lu\n", sizeof(struct inodo));
     printf("\n");
 
+    #if DEBUG_N4
     printf("===== MAPA DE BITS =====\n");
     unsigned int bloques[] = {SB.posPrimerBloqueMB, SB.posUltimoBloqueMB, 
                               SB.posPrimerBloqueAI, SB.posUltimoBloqueAI, 
@@ -134,6 +135,70 @@ int main(int argc, char **argv) {
         printf("tamEnBytesLog: %d\n", inodoRaiz.tamEnBytesLog);
         printf("numBloquesOcupados: %d\n", inodoRaiz.numBloquesOcupados);
     }
+    printf("\n");
+    #endif
+
+    // Prueba de traducción de bloques lógicos
+    printf("===== PRUEBA DE TRADUCCIÓN DE BLOQUES LÓGICOS =====\n");
+
+    // Reservamos un inodo para usar en las pruebas
+    int inodoReservado = reservar_inodo('d', 6);
+    if (inodoReservado == FALLO) {
+        fprintf(stderr, "Error al reservar inodo.\n");
+        bumount();
+        return FALLO;
+    }
+
+    // Traducimos bloques lógicos a bloques físicos
+    unsigned int bloques_logicos[] = {8, 204, 30004, 400004, 468750};
+    for (int i = 0; i < 5; i++) {
+        int bloque_fisico = traducir_bloque_inodo(inodoReservado, bloques_logicos[i], 1);
+        if (bloque_fisico == FALLO) {
+            fprintf(stderr, "Error en la traducción del bloque lógico %u\n", bloques_logicos[i]);
+        } else {
+            printf("Bloque lógico %u → Bloque físico %d\n\n", bloques_logicos[i], bloque_fisico);
+        }
+    }
+
+    // Se lee y muestra la información del inodo reservado
+    printf("===== DATOS DEL INODO RESERVADO %d =====\n", inodoReservado);
+    struct inodo inodoReservadoEstruct;
+    if (leer_inodo(inodoReservado, &inodoReservadoEstruct) == FALLO) {
+        fprintf(stderr, "Error al leer el inodo reservado.\n");
+    } else {
+        printf("tipo: %c\n", inodoReservadoEstruct.tipo);
+        printf("permisos: %d\n", inodoReservadoEstruct.permisos);
+
+        char atime[80], mtime[80], ctime[80], btime[80];
+        struct tm *ts;
+
+        ts = localtime(&inodoReservadoEstruct.atime);
+        strftime(atime, sizeof(atime), "%a %Y-%m-%d %H:%M:%S", ts);
+        ts = localtime(&inodoReservadoEstruct.mtime);
+        strftime(mtime, sizeof(mtime), "%a %Y-%m-%d %H:%M:%S", ts);
+        ts = localtime(&inodoReservadoEstruct.ctime);
+        strftime(ctime, sizeof(ctime), "%a %Y-%m-%d %H:%M:%S", ts);
+        ts = localtime(&inodoReservadoEstruct.btime);
+        strftime(btime, sizeof(btime), "%a %Y-%m-%d %H:%M:%S", ts);
+
+        printf("atime: %s\n", atime);
+        printf("mtime: %s\n", mtime);
+        printf("ctime: %s\n", ctime);
+        printf("btime: %s\n", btime);
+        printf("nlinks: %d\n", inodoReservadoEstruct.nlinks);
+        printf("tamEnBytesLog: %d\n", inodoReservadoEstruct.tamEnBytesLog);
+        printf("numBloquesOcupados: %d\n", inodoReservadoEstruct.numBloquesOcupados);
+    }
+
+    // Actualizar SB desde disco
+    if (bread(posSB, &SB) == FALLO) {
+        fprintf(stderr, "Error al refrescar superbloque\n");
+        bumount();
+        return FALLO;
+    }
+    
+    // Mostramos el valor actualizado de posPrimerInodoLibre
+    printf("SB.posPrimerInodoLibre = %d\n", SB.posPrimerInodoLibre);
     printf("\n");
 
     // Desmontar el dispositivo
