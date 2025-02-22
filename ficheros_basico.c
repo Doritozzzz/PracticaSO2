@@ -620,5 +620,98 @@ int obtener_indice(unsigned int nblogico, int nivel_punteros) {
  * @return Número de bloque físico traducido
  */
 int traducir_bloque_inodo(unsigned int ninodo, unsigned int nblogico, char reservar){
-    return 0;
+    // Definimos las variables necesarias
+    struct inodo inodo;
+    unsigned int ptr, ptr_ant, salvar_inodo;
+    int nRangoBL, nivel_punteros, indice;
+    unsigned int buffer[NPUNTEROS];
+
+    // Inicializamos variables
+    ptr = 0;
+    ptr_ant = 0;
+    salvar_inodo = 0;
+    indice = 0;
+
+    // Leemos el inodo
+    if (leer_inodo(ninodo, &inodo) == FALLO) {
+        return FALLO;
+    }
+
+    // Obtenemos el rango de bloque lógico
+    nRangoBL = obtener_nRangoBL(&inodo, nblogico, &ptr);
+
+    // El nivel de punteros depende del rango de bloque lógico
+    nivel_punteros = nRangoBL;
+
+    // Iteramos para cada nivel de punteros indirectos
+    while (nivel_punteros > 0) {
+
+        // Comprobamos si el puntero es nulo
+        if (ptr == 0) {
+
+            // Reservamos un bloque si es necesario
+            if (reservar == 0) {
+                return FALLO;
+            } else {
+
+                // Guardamos el inodo si es necesario
+                salvar_inodo = 1;
+                ptr = reservar_bloque(); // Reservamos un bloque
+                inodo.numBloquesOcupados++; // Incrementamos el número de bloques ocupados
+                inodo.ctime = time(NULL); // Actualizamos la fecha de modificación
+
+                // Actualizamos el puntero directo o indirecto
+                if (nivel_punteros == nRangoBL) {
+                    inodo.punterosIndirectos[nRangoBL - 1] = ptr; // Actualizamos el puntero indirecto
+                } else {
+                    buffer[indice] = ptr; 
+                    if (bwrite(ptr_ant, buffer) == FALLO) { // Escribimos el bloque de punteros
+                        return FALLO;
+                    }
+                }
+                memset(buffer, 0, BLOCKSIZE);
+            }      
+        }
+        else {
+            // Leemos el bloque de punteros
+            if (bread(ptr, buffer) == FALLO) {
+                return FALLO;
+            }
+        }
+        // Calculamos el índice del bloque lógico en el bloque de punteros
+        indice = obtener_indice(nblogico, nivel_punteros);
+        ptr_ant = ptr; // Guardamos el puntero anterior
+        ptr = buffer[indice]; // Actualizamos el puntero
+        nivel_punteros--; // Decrementamos el nivel de punteros
+    }
+
+    // No existe el bloque lógico
+    if (ptr == 0) {
+        if (reservar == 0) {
+            return FALLO;
+        } else {
+            salvar_inodo = 1; // Guardamos el inodo
+            ptr = reservar_bloque(); // Reservamos un bloque
+            inodo.numBloquesOcupados++; // Incrementamos el número de bloques ocupados
+            inodo.ctime = time(NULL); // Actualizamos la fecha de modificación
+            if (nRangoBL == 0) { // Actualizamos el puntero directo
+                inodo.punterosDirectos[nblogico] = ptr;
+            } else {
+                buffer[indice] = ptr;
+                if (bwrite(ptr_ant, buffer) == FALLO) { // Escribimos el bloque de punteros
+                    return FALLO;
+                }
+            }
+        }
+    }
+
+    // Guardamos el inodo si es necesario
+    if (salvar_inodo == 1) {
+        if (escribir_inodo(ninodo, &inodo) == FALLO) {
+            return FALLO;
+        }
+    }
+
+    // Retornamos el número de bloque físico traducido
+    return ptr;
 }
