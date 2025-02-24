@@ -17,6 +17,7 @@ int mi_write_f(unsigned int ninodo, const void *buf_original, unsigned int offse
 
     // Comprobamos que el inodo exista
     if (leer_inodo(ninodo, &inodo) == FALLO) {
+        fprintf(stderr, RED "El inodo no existe\n" RESET);
         return FALLO;
     }
 
@@ -122,4 +123,91 @@ int mi_write_f(unsigned int ninodo, const void *buf_original, unsigned int offse
 
     // Retornamos la cantidad de bytes escritos
     return bytes_escritos;
+}
+
+/**
+ * mi_read_f --> Función para leer un bloque de datos de un fichero
+ * @param ninodo: Número de inodo del fichero
+ * @param buf_original: Puntero al buffer de datos a leer
+ * @param offset: Desplazamiento en el fichero
+ * @param nbytes: Número de bytes a leer
+ * @return Cantidad de bytes leídos correctamente, debería ser igual a nbytes
+ */
+
+ int mi_read_f(unsigned int ninodo, void *buf_original, unsigned int offset, unsigned int nbytes) {
+    // Definimos las variables necesarias
+    struct inodo inodo;
+    unsigned int primerBL, ultimoBL, desp1, desp2, nbfisico;
+    char buf_bloque[BLOCKSIZE];
+    int bytes_leidos = 0;
+    int inicio, final; // Posiciones de inicio y fin en el bloque lógico a leer
+
+    // Comprobamos que el inodo exista
+    if (leer_inodo(ninodo, &inodo) == FALLO) {
+        fprintf(stderr, RED "El inodo no existe\n" RESET);
+        return FALLO;
+    }
+
+    // Solo se puede leer si el inodo tiene permisos de lectura
+    if ((inodo.permisos & 4) != 4) { 
+        fprintf(stderr, RED "No hay permisos de lectura\n" RESET); 
+        return FALLO; 
+    }
+
+    // No puede leer más allá del tamaño en bytes lógico del fichero
+    if (offset >= inodo.tamEnBytesLog) {
+        bytes_leidos = 0;
+        return bytes_leidos;
+    }
+
+    // Pretende leer más allá del EOF
+    if ((offset + nbytes) >= inodo.tamEnBytesLog) {
+        nbytes = inodo.tamEnBytesLog - offset;
+    }
+
+    // Calculamos el primer y último bloque lógico a escribir
+    primerBL = offset / BLOCKSIZE;
+    ultimoBL = (offset + nbytes - 1) / BLOCKSIZE;
+
+    // Calculamos los desplazamientos en el primer y último bloque lógico
+    desp1 = offset % BLOCKSIZE;
+    desp2 = (offset + nbytes - 1) % BLOCKSIZE;
+
+    // Iteramos sobre los bloques lógicos a leer
+    for (unsigned int nblogico = primerBL; nblogico <= ultimoBL; nblogico++) {
+        nbfisico = traducir_bloque_inodo(ninodo, nblogico, 0); // No reservamos el bloque
+        if (nblogico == primerBL) {
+            inicio = desp1;
+        } else {
+            inicio = 0;
+        } 
+        if (nblogico == ultimoBL) { // Final - inicio da el número de bytes a leer
+            final = desp2 + 1;
+        } else {
+            final = BLOCKSIZE;
+        }
+
+        // Cantida de bytes a leer
+        unsigned int bytes_a_leer = final - inicio;
+        if (nbfisico == FALLO) { // Si no hay bloque lógico, rellenamos con 0s
+            bytes_leidos += bytes_a_leer;
+        } else {
+            if (bread(nbfisico, buf_bloque) == FALLO) { // Leemos el bloque
+                return FALLO;
+            }
+
+            // Copiamos los datos al buffer original
+            memcpy((char*) buf_original + bytes_leidos, buf_bloque + inicio, bytes_a_leer);
+            bytes_leidos += bytes_a_leer; // Actualizamos la cantidad de bytes leidos
+        }
+    }
+    // Actualizamos atime
+    inodo.atime = time(NULL);
+    if (escribir_inodo(ninodo, &inodo) == FALLO) {
+        fprintf(stderr,RED "Error al actualizar el inodo %u\n", ninodo);
+        return FALLO;
+    }
+
+    // Retornamos la cantidad de bytes leídos
+    return bytes_leidos;
 }
