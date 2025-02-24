@@ -211,3 +211,23 @@ int mi_write_f(unsigned int ninodo, const void *buf_original, unsigned int offse
     // Retornamos la cantidad de bytes leídos
     return bytes_leidos;
 }
+
+/**
+ * mi_stat_f --> Función para obtener la información de un fichero
+ * @param ninodo: Número de inodo del fichero
+ * @param p_stat: Puntero a la estructura STAT donde se almacenará la información
+ * @return 0 si todo ha ido bien, -1 en caso de error
+ */
+int mi_stat_f(unsigned int ninodo, struct STAT *p_stat){
+
+}
+
+/**
+ * mi_chmod_f --> Función para cambiar los permisos de un fichero
+ * @param ninodo: Número de inodo del fichero
+ * @param permisos: Nuevos permisos del fichero
+ * @return 0 si todo ha ido bien, -1 en caso de error
+ */
+int mi_chmod_f(unsigned int ninodo, unsigned char permisos){
+
+}
