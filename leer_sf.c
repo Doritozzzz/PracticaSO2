@@ -138,6 +138,7 @@ int main(int argc, char **argv) {
     printf("\n");
     #endif
 
+    #if DEBUG_N5
     // Prueba de traducción de bloques lógicos
     printf("===== PRUEBA DE TRADUCCIÓN DE BLOQUES LÓGICOS =====\n");
 
@@ -200,6 +201,7 @@ int main(int argc, char **argv) {
     // Mostramos el valor actualizado de posPrimerInodoLibre
     printf("SB.posPrimerInodoLibre = %d\n", SB.posPrimerInodoLibre);
     printf("\n");
+#endif
 
     // Desmontar el dispositivo
     if (bumount(nombre_dispositivo) == FALLO) {
