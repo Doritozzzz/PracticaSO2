@@ -216,18 +216,57 @@ int mi_write_f(unsigned int ninodo, const void *buf_original, unsigned int offse
  * mi_stat_f --> Función para obtener la información de un fichero
  * @param ninodo: Número de inodo del fichero
  * @param p_stat: Puntero a la estructura STAT donde se almacenará la información
- * @return 0 si todo ha ido bien, -1 en caso de error
+ * @return EXITO si todo ha ido bien, FALLO en caso de error
  */
 int mi_stat_f(unsigned int ninodo, struct STAT *p_stat){
+    // Definimos las variables necesarias
+    struct inodo inodo;
 
+    // Comprobamos que el inodo exista
+    if (leer_inodo(ninodo, &inodo) == FALLO) {
+        fprintf(stderr, RED "El inodo no existe\n" RESET);
+        return FALLO;
+    }
+
+    // Usamos -> para acceder a los campos de la estructura, ya que se pasa por referencia
+    p_stat->tipo = inodo.tipo;
+    p_stat->permisos = inodo.permisos;
+    p_stat->nlinks = inodo.nlinks;
+    p_stat->tamEnBytesLog = inodo.tamEnBytesLog;
+    p_stat->atime = inodo.atime;
+    p_stat->mtime = inodo.mtime;
+    p_stat->ctime = inodo.ctime;
+    p_stat->numBloquesOcupados = inodo.numBloquesOcupados;
+
+    return EXITO;
 }
 
 /**
  * mi_chmod_f --> Función para cambiar los permisos de un fichero
  * @param ninodo: Número de inodo del fichero
  * @param permisos: Nuevos permisos del fichero
- * @return 0 si todo ha ido bien, -1 en caso de error
+ * @return EXITO si todo ha ido bien, FALLO en caso de error
  */
 int mi_chmod_f(unsigned int ninodo, unsigned char permisos){
+    // Definimos las variables necesarias
+    struct inodo inodo;
 
+    // Comprobamos que el inodo exista
+    if (leer_inodo(ninodo, &inodo) == FALLO) {
+        fprintf(stderr, RED "El inodo no existe\n" RESET);
+        return FALLO;
+    }
+
+    // Actualizamos los permisos del inodo
+    inodo.permisos = permisos;
+
+    // Actualizamos la marca de tiempo ctime
+    inodo.ctime = time(NULL);
+
+    // Escribimos el inodo actualizado en el dispositivo
+    if (escribir_inodo(ninodo, &inodo) == FALLO) {
+        return FALLO;
+    }
+
+    return EXITO;
 }
