@@ -719,3 +719,63 @@ int traducir_bloque_inodo(unsigned int ninodo, unsigned int nblogico, char reser
     // Retornamos el número de bloque físico traducido
     return ptr;
 }
+
+/**
+ * liberar_inodo  --> Libera un inodo del dispositivo virtual
+ * @param ninodo: Número de inodo a liberar
+ * @return Número de inodo liberado, FALLO en caso contrario
+ */
+int liberar_inodo(unsigned int ninodo) {
+    // Definimos las variables necesarias
+    struct inodo inodo;
+    struct superbloque SB;
+    int bloquesLiberados;
+
+    // Leemos el inodo
+    if (leer_inodo(ninodo, &inodo) == FALLO) {
+        fprintf(stderr, "Error en la leectura del inodo %u\n", ninodo);
+        return FALLO;
+    }
+
+    // Liberamos los bloques de datos del inodo
+    bloquesLiberados = liberar_bloques_inodo(0, &inodo);
+    if (bloquesLiberados == FALLO) {
+        fprintf(stderr, "Error al liberar bloques del inodo %u\n", ninodo);
+        return FALLO;
+    }
+
+    // Liberamos el inodo
+    inodo.numBloquesOcupados -= bloquesLiberados;
+
+    // Actualizamos el inodo
+    inodo.tipo = 'l';
+    inodo.tamEnBytesLog = 0;
+
+    // Leemos el superbloque
+    if (leer_sb(&SB) == FALLO) {
+        fprintf(stderr, "Error en la lectura del superbloque\n");
+        return FALLO;
+    }
+
+    // Actualizamos el inodo
+    inodo.punterosDirectos[0] = SB.posPrimerInodoLibre;
+    SB.posPrimerInodoLibre = ninodo;
+    SB.cantInodosLibres++;
+
+    // Escribimos el SB
+    if (escribir_sb(&SB) == FALLO) {
+        fprintf(stderr, "Error en la escritura del superbloque\n");
+        return  FALLO;
+    }
+
+    // Escribimos el inodo
+    inodo.ctime = time(NULL);
+
+    // Escribimos el inodo
+    if (escribir_inodo(ninodo, &inodo) == FALLO) {
+        fprintf(stderr, "Error en la escritura del inodo %u\n", ninodo);
+        return FALLO;
+    }
+
+    return ninodo;
+}

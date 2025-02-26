@@ -2,4 +2,10 @@
 
 Nivel 1: done 
 
-Nivel 2: leer_sf.c falta leer los inodos y mostrarlos
+Nivel 2: done
+
+Nivel 3: done
+
+Nivel 4: done
+
+Nivel 5: done

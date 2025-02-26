@@ -90,3 +90,8 @@ int reservar_inodo(unsigned char tipo, unsigned char permisos);
 int traducir_bloque_inodo(unsigned int ninodo, unsigned int nblogico, char reservar);
 int obtener_nRangoBL(struct inodo *inodo, unsigned int nblogico, unsigned int *ptr);
 int obtener_indice(unsigned int nblogico, int nivel_punteros);
+
+//Nivel 6
+int liberar_inodo(unsigned int ninodo);
+int liberar_bloques_inodo(unsigned int primerBL, struct inodo *inodo);
+int mi_truncar_f(unsigned int ninodo, unsigned int nbytes);
