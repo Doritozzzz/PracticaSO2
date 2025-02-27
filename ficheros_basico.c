@@ -779,3 +779,14 @@ int liberar_inodo(unsigned int ninodo) {
 
     return ninodo;
 }
+
+/**
+ * liberar_bloques_inodo --> Libera los bloques de datos de un inodo
+ * @param primerBL: Número de primer bloque lógico a liberar
+ * @param inodo: Inodo del que liberar los bloques
+ * @return Número de bloques liberados, FALLO en caso contrario
+ */
+int liberar_bloques_inodo(unsigned int primerBL, struct inodo *inodo){
+    
+}
+
