@@ -1,4 +1,5 @@
 #include "ficheros_basico.h"
+#include <math.h>
 
 /**
  * tamMB --> Función para calcular el tamaño del mapa de bits en bloques
@@ -752,7 +753,7 @@ int liberar_inodo(unsigned int ninodo) {
     inodo.tamEnBytesLog = 0;
 
     // Leemos el superbloque
-    if (leer_sb(&SB) == FALLO) {
+    if (bread(posSB, &SB) == FALLO) {
         fprintf(stderr, "Error en la lectura del superbloque\n");
         return FALLO;
     }
@@ -763,9 +764,9 @@ int liberar_inodo(unsigned int ninodo) {
     SB.cantInodosLibres++;
 
     // Escribimos el SB
-    if (escribir_sb(&SB) == FALLO) {
+    if(bwrite(posSB, &SB) == FALLO){
         fprintf(stderr, "Error en la escritura del superbloque\n");
-        return  FALLO;
+        return FALLO;
     }
 
     // Escribimos el inodo
@@ -780,6 +781,7 @@ int liberar_inodo(unsigned int ninodo) {
     return ninodo;
 }
 
+#ifdef COMPACTACODIGO
 /**
  * liberar_bloques_inodo --> Libera los bloques de datos de un inodo
  * @param primerBL: Número de primer bloque lógico a liberar
@@ -808,6 +810,8 @@ int liberar_bloques_inodo(unsigned int primerBL, struct inodo *inodo){
         ultimoBL = inodo->tamEnBytesLog / BLOCKSIZE;
     }
 
+    printf("[liberar_bloques_inodo()\u2192 primer BL: %u, último BL: %u]\n", primerBL, ultimoBL);
+
     // Obtenemos el rango de bloque lógico
     nRangoBL = obtener_nRangoBL(inodo, nBL, &ptr);
     if (nRangoBL == FALLO) {
@@ -823,7 +827,7 @@ int liberar_bloques_inodo(unsigned int primerBL, struct inodo *inodo){
     while (!eof){
         nRangoBL = obtener_nRangoBL(inodo, nBL, &ptr);
         nivel_punteros = nRangoBL;
-        liberados+= liberar_indirectos(&nBL, primerBL, ultimoBL, inodo, nRangoBL, nivel_punteros, &ptr, &eof);
+        liberados+= liberar_indirectos_recursivo(&nBL, primerBL, ultimoBL, inodo, nRangoBL, nivel_punteros, &ptr, &eof);
     }
     return liberados;
 }
@@ -845,6 +849,7 @@ int liberar_directos(unsigned int *nBL, unsigned int ultimoBL, struct inodo *ino
 
         // Comprobamos si el bloque lógico está ocupado
         if (inodo->punterosDirectos[*nBL] != 0) {
+            printf("[liberar_bloques_inodo()\u2192 liberado BF %u de datos para BL %u]\n", inodo->punterosDirectos[*nBL], *nBL);
             // Liberamos el bloque lógico
             liberar_bloque(inodo->punterosDirectos[*nBL]);
             inodo->punterosDirectos[*nBL] = 0;
@@ -899,7 +904,8 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
         // Recorrer los bloques de punteros
         for(int i = indice_inicial; i < NPUNTEROS && !(*eof); i++){
             if (bloquePunteros[i] != 0){ // Si el bloque de punteros no está vacío
-                if (nivel_punteros = 1){
+                if (nivel_punteros == 1){
+                    printf("[liberar_bloques_inodo()\u2192 liberado BF %u de datos para BL %u]\n", bloquePunteros[i], *nBL);
                     liberar_bloque(bloquePunteros[i]); // Liberamos el bloque de datos
                     bloquePunteros[i] = 0; // Ponemos el puntero a 0
                     liberados++; 
@@ -909,6 +915,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                     liberados+=liberar_indirectos_recursivo(nBL, primerBL, ultimoBL, inodo, nRangoBL, nivel_punteros - 1, &bloquePunteros[i], eof);    
                 }
             } else {
+                printf("[liberar_bloques_inodo()\u2192 Del BL %u saltamos hasta BL %lu]\n", *nBL, *nBL + (nivel_punteros == 1 ? 1 : (nivel_punteros == 2 ? NPUNTEROS : NPUNTEROS * NPUNTEROS)));
                 // Cuantos bloques/posiciones de punteros hay que avanzar segun el nivel de punteros
                 switch (nivel_punteros) {
                     case 1:
@@ -923,7 +930,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                     default:
                         break;
                 }
-            }
+              }
             // Si se ha llegado al final del fichero
             if (*nBL > ultimoBL){ 
                 *eof = 1;
@@ -937,11 +944,12 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                 if (bwrite(*ptr, bufferCeros) == FALLO){
                     fprintf(stderr,RED "Error al escribir el bloque de punteros\n");
                     return FALLO;
-                }              
+                }             
             } else { // Si no hay punteros != 0 en el bloque lo liberamos
                 liberar_bloque(*ptr);
                 *ptr = 0;
                 liberados++;
+                printf("[liberar_bloques_inodo()\u2192 liberado BF %u de punteros]\n", *ptr);
             }      
         }
     }  else { // Si el puntero es 0 es que tiene que ir a otro nivel
@@ -963,3 +971,64 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
     // Devolvemos el número de bloques liberados
     return liberados;
 }
+#endif
+
+/**
+ * mi_truncar_f --> Trunca un fichero a los bytes indicados como nbytes, liberando los bloques necesarios.
+ * @param ninodo: Número de inodo a truncar
+ * @param nbytes: Número de bytes a truncar
+ * @return Número de bloques liberados, FALLO en caso contrario
+ */
+int mi_truncar_f(unsigned int ninodo, unsigned int nbytes){
+    // Definimos las variables necesarias
+    struct inodo inodo;
+    unsigned int primerBL = 0;
+    int liberados;
+
+    //Leemos el inodo
+    if(leer_inodo(ninodo,&inodo)==FALLO){
+        fprintf(stderr,"Error en la lectura del inodo\n");
+        return FALLO;
+    }
+
+    // Comprobamos permisos de escritura
+    if ((inodo.permisos & 2) != 2) {
+        fprintf(stderr, "Error: el inodo %u no tiene permisos de escritura\n", ninodo);
+        return FALLO;
+    }
+
+    // No se puede truncar más allá del tamaño del fichero
+    if (nbytes > inodo.tamEnBytesLog) {
+        fprintf(stderr, "Error: no se puede truncar más allá del tamaño del fichero\n");
+        return FALLO;
+    }
+
+    // Calculamos el primer bloque lógico necesario
+    if (nbytes % BLOCKSIZE == 0) {
+        primerBL = nbytes / BLOCKSIZE;
+    } else {
+        primerBL = nbytes / BLOCKSIZE + 1;
+    }
+
+    // Liberamos los bloques de datos
+    liberados = liberar_bloques_inodo(primerBL, &inodo);
+
+    // Actualizamos mtime y ctime
+    inodo.mtime = time(NULL);
+    inodo.ctime = time(NULL);
+
+    // Actualizamos el tamaño en bytes lógicos
+    inodo.tamEnBytesLog = nbytes;
+
+    // Actualizamos el número de bloques ocupados
+    inodo.numBloquesOcupados -= liberados;
+
+    // Escribimos el inodo
+    if (escribir_inodo(ninodo, &inodo) == FALLO) {
+        fprintf(stderr,RED "Error en la escritura del inodo %u\n", ninodo);
+        return FALLO;
+    }
+
+    return liberados;
+}
+

@@ -1,6 +1,7 @@
 #include "bloques.h"
 #include <time.h>
 #include <limits.h>
+#include <math.h>
 
 #define posSB 0 // el superbloque se escribe en el primer bloque de nuestro FS
 #define tamSB 1
@@ -96,4 +97,5 @@ int liberar_inodo(unsigned int ninodo);
 int liberar_bloques_inodo(unsigned int primerBL, struct inodo *inodo);
 int mi_truncar_f(unsigned int ninodo, unsigned int nbytes);
 int liberar_directos(unsigned int *nBL, unsigned int ultimoBL, struct inodo *inodo, int *eof);
-int liberar_indirectos(unsigned int *nBL, unsigned int primerBL, unsigned int ultimoBL, struct inodo *inodo, int nRangoBL,unsigned int nivel_punteros, unsigned int *ptr, int *eof);
+int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsigned int ultimoBL, struct inodo *inodo, int nRangoBL,unsigned int nivel_punteros, unsigned int *ptr, int *eof);
+int mi_truncar_f(unsigned int ninodo, unsigned int nbytes);
