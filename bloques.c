@@ -19,7 +19,7 @@ int bmount(const char *camino) {
     
     // Comprobar si se ha abierto correctamente, devuelve FALLO en caso contrario
     if (descriptor == -1) {
-        fprintf(stderr, "Error en la apertura del fichero %s: %s\n", camino, strerror(errno));
+        fprintf(stderr,RED "Error en la apertura del fichero %s: %s\n", camino, strerror(errno));
         return FALLO;
     }
 
@@ -36,7 +36,7 @@ int bumount(){
 
     // Comprobar si se ha cerrado correctamente, devuelve FALLO en caso contrario
     if (cierre == -1) {
-        fprintf(stderr, "Error en el cierre del fichero: %s\n", strerror(errno));
+        fprintf(stderr,RED "Error en el cierre del fichero: %s\n", strerror(errno));
         return FALLO;
     }
 
@@ -62,7 +62,7 @@ int bwrite(unsigned int nbloque, const void *buf){
 
     // Comprobar si se ha desplazado correctamente, devuelve FALLO en caso contrario
     if (posicion == -1) {
-        fprintf(stderr, "Error en el desplazamiento del fichero: %s\n", strerror(errno));
+        fprintf(stderr,RED "Error en el desplazamiento del fichero: %s\n", strerror(errno));
         return FALLO;
     }
 
@@ -71,7 +71,7 @@ int bwrite(unsigned int nbloque, const void *buf){
 
     // Comprobar si se ha escrito correctamente, devuelve FALLO en caso contrario
     if (escritura == -1) {
-        fprintf(stderr, "Error en la escritura del fichero: %s\n", strerror(errno));
+        fprintf(stderr,RED "Error en la escritura del fichero: %s\n", strerror(errno));
         return FALLO;
     }
 
@@ -98,7 +98,7 @@ int bread(unsigned int nbloque, void *buf){
 
     // Comprobar si se ha desplazado correctamente, devuelve FALLO en caso contrario
     if (posicion == -1) {
-        fprintf(stderr, "Error en el desplazamiento del fichero: %s\n", strerror(errno));
+        fprintf(stderr,RED "Error en el desplazamiento del fichero: %s\n", strerror(errno));
         return FALLO;
     }
 
@@ -107,7 +107,7 @@ int bread(unsigned int nbloque, void *buf){
 
     // Comprobar si se ha leído correctamente, devuelve FALLO en caso contrario
     if (lectura == -1) {
-        fprintf(stderr, "Error en la lectura del fichero: %s\n", strerror(errno));
+        fprintf(stderr,RED "Error en la lectura del fichero: %s\n", strerror(errno));
         return FALLO;
     }
 

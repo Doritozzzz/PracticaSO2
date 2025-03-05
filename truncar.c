@@ -8,7 +8,7 @@ int main (int argc, char **argv){
 
     // Validación de sintaxis
     if (argc != 4){
-        fprintf(stderr, "Sintaxis: %s <nombre_dispositivo> <ninodo> <nbytes>\n", argv[0]);
+        fprintf(stderr,RED "Sintaxis: %s <nombre_dispositivo> <ninodo> <nbytes>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -20,7 +20,7 @@ int main (int argc, char **argv){
 
     // Montar el dispositivo virtual
     if (bmount(nombre_dispositivo) == FALLO){
-        fprintf(stderr, "Error al montar el dispositivo %s\n", nombre_dispositivo);
+        fprintf(stderr,RED "Error al montar el dispositivo %s\n", nombre_dispositivo);
         exit(EXIT_FAILURE);
     }
 
@@ -28,20 +28,20 @@ int main (int argc, char **argv){
     if (nbytes == 0) {
         resultado = liberar_inodo(ninodo);
         if (resultado == FALLO) {
-            fprintf(stderr, "Error al liberar el inodo.\n");
+            fprintf(stderr,RED "Error al liberar el inodo.\n");
             bumount();
             exit(EXIT_FAILURE);
         }
     } else {
         // Se valida que se deje al menos 1 byte escrito en el inodo
         if (nbytes < 1) {
-            fprintf(stderr, "Error: nbytes debe ser 0 o al menos 1.\n");
+            fprintf(stderr,RED "Error: nbytes debe ser 0 o al menos 1.\n");
             bumount();
             exit(EXIT_FAILURE);
         }
         resultado = mi_truncar_f(ninodo, nbytes);
         if (resultado == FALLO) {
-            fprintf(stderr, "Error en mi_truncar_f().\n");
+            fprintf(stderr,RED "Error en mi_truncar_f().\n");
             bumount();
             exit(EXIT_FAILURE);
         }
@@ -49,15 +49,15 @@ int main (int argc, char **argv){
 
     // Desmontar dispositivo virtual
     if (bumount() == FALLO) {
-        fprintf(stderr, "Error al desmontar el dispositivo virtual.\n");
+        fprintf(stderr,RED "Error al desmontar el dispositivo virtual.\n");
         exit(EXIT_FAILURE);
     }
 
     // Mostrar estadísticas del inodo para verificar tamEnBytesLog y numBloquesOcupados
     struct STAT inodo_stat;
     if (mi_stat_f(ninodo, &inodo_stat) == FALLO) {
-        fprintf(stderr, "Error en mi_stat_f().\n");
-        exit(EXIT_FAILURE);
+        fprintf(stderr,RED "Error en mi_stat_f().\n");
+        return EXIT_FAILURE;
     }
     printf("Tamaño en bytes lógicos: %u\n", inodo_stat.tamEnBytesLog);
     printf("Número de bloques ocupados: %d\n", inodo_stat.numBloquesOcupados);
