@@ -95,3 +95,5 @@ int obtener_indice(unsigned int nblogico, int nivel_punteros);
 int liberar_inodo(unsigned int ninodo);
 int liberar_bloques_inodo(unsigned int primerBL, struct inodo *inodo);
 int mi_truncar_f(unsigned int ninodo, unsigned int nbytes);
+int liberar_directos(unsigned int *nBL, unsigned int ultimoBL, struct inodo *inodo, int *eof);
+int liberar_indirectos(unsigned int *nBL, unsigned int primerBL, unsigned int ultimoBL, struct inodo *inodo, int nRangoBL,unsigned int nivel_punteros, unsigned int *ptr, int *eof);

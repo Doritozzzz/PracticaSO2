@@ -9,3 +9,5 @@ Nivel 3: done
 Nivel 4: done
 
 Nivel 5: done
+
+Nivel 6: easy
