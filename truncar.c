@@ -27,6 +27,7 @@ int main (int argc, char **argv){
     // Si nbytes es 0, se invoca liberar_inodo(), sino se llama a mi_truncar_f()
     if (nbytes == 0) {
         resultado = liberar_inodo(ninodo);
+        
         if (resultado == FALLO) {
             fprintf(stderr,RED "Error al liberar el inodo.\n");
             bumount();
@@ -40,6 +41,7 @@ int main (int argc, char **argv){
             exit(EXIT_FAILURE);
         }
         resultado = mi_truncar_f(ninodo, nbytes);
+       
         if (resultado == FALLO) {
             fprintf(stderr,RED "Error en mi_truncar_f().\n");
             bumount();
@@ -47,20 +49,31 @@ int main (int argc, char **argv){
         }
     }
 
+    
+
+    // Mostrar estadísticas del inodo para verificar tamEnBytesLog y numBloquesOcupados
+    struct STAT inodo_stat;
+
+    if (mi_stat_f(ninodo, &inodo_stat) == FALLO) {
+        fprintf(stderr,RED "Error en mi_stat_f().\n");
+        return EXIT_FAILURE;
+    }
+    
+    printf("DATOS INODO %d:\n",ninodo);
+    printf("tipo: %d\n", inodo_stat.tipo);
+    printf("permisos: %d\n", inodo_stat.permisos);
+    printf("atime: %ld\n", inodo_stat.atime);
+    printf("mtime: %ld\n", inodo_stat.mtime);
+    printf("ctime: %ld\n", inodo_stat.ctime);
+    printf("nlinks: %d\n", inodo_stat.nlinks);
+    printf("Tamaño en bytes lógicos: %u\n", inodo_stat.tamEnBytesLog);
+    printf("Número de bloques ocupados: %d\n", inodo_stat.numBloquesOcupados);
+
     // Desmontar dispositivo virtual
     if (bumount() == FALLO) {
         fprintf(stderr,RED "Error al desmontar el dispositivo virtual.\n");
         exit(EXIT_FAILURE);
     }
-
-    // Mostrar estadísticas del inodo para verificar tamEnBytesLog y numBloquesOcupados
-    struct STAT inodo_stat;
-    if (mi_stat_f(ninodo, &inodo_stat) == FALLO) {
-        fprintf(stderr,RED "Error en mi_stat_f().\n");
-        return EXIT_FAILURE;
-    }
-    printf("Tamaño en bytes lógicos: %u\n", inodo_stat.tamEnBytesLog);
-    printf("Número de bloques ocupados: %d\n", inodo_stat.numBloquesOcupados);
 
     return EXIT_SUCCESS;
 }
