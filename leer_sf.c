@@ -29,18 +29,18 @@ int main(int argc, char **argv) {
     }
 
     printf("\n===== DATOS DEL SUPERBLOQUE =====\n");
-    printf("posPrimerBloqueMB = %d\n", SB.posPrimerBloqueMB);
-    printf("posUltimoBloqueMB = %d\n", SB.posUltimoBloqueMB);
-    printf("posPrimerBloqueAI = %d\n", SB.posPrimerBloqueAI);
-    printf("posUltimoBloqueAI = %d\n", SB.posUltimoBloqueAI);
-    printf("posPrimerBloqueDatos = %d\n", SB.posPrimerBloqueDatos);
-    printf("posUltimoBloqueDatos = %d\n", SB.posUltimoBloqueDatos);
-    printf("posInodoRaiz = %d\n", SB.posInodoRaiz);
-    printf("posPrimerInodoLibre = %d\n", SB.posPrimerInodoLibre);
-    printf("cantBloquesLibres = %d\n", SB.cantBloquesLibres);
-    printf("cantInodosLibres = %d\n", SB.cantInodosLibres);
-    printf("totBloques = %d\n", SB.totBloques);
-    printf("totInodos = %d\n", SB.totInodos);
+    printf("posPrimerBloqueMB = %u\n", SB.posPrimerBloqueMB);
+    printf("posUltimoBloqueMB = %u\n", SB.posUltimoBloqueMB);
+    printf("posPrimerBloqueAI = %u\n", SB.posPrimerBloqueAI);
+    printf("posUltimoBloqueAI = %u\n", SB.posUltimoBloqueAI);
+    printf("posPrimerBloqueDatos = %u\n", SB.posPrimerBloqueDatos);
+    printf("posUltimoBloqueDatos = %u\n", SB.posUltimoBloqueDatos);
+    printf("posInodoRaiz = %u\n", SB.posInodoRaiz);
+    printf("posPrimerInodoLibre = %u\n", SB.posPrimerInodoLibre);
+    printf("cantBloquesLibres = %u\n", SB.cantBloquesLibres);
+    printf("cantInodosLibres = %u\n", SB.cantInodosLibres);
+    printf("totBloques = %u\n", SB.totBloques);
+    printf("totInodos = %u\n", SB.totInodos);
     printf("\n");
 
     printf("sizeof struct superbloque: %lu\n", sizeof(struct superbloque));
