@@ -788,6 +788,8 @@ int liberar_inodo(unsigned int ninodo) {
  * @param inodo: Inodo del que liberar los bloques
  * @return Número de bloques liberados, FALLO en caso contrario
  */
+int total_breads=0;
+int total_bwrites=0;
 int liberar_bloques_inodo(unsigned int primerBL, struct inodo *inodo){
     // Definimos las variables necesarias
     unsigned int ultimoBL; 
@@ -832,7 +834,7 @@ int liberar_bloques_inodo(unsigned int primerBL, struct inodo *inodo){
         liberados+= liberar_indirectos_recursivo(&nBL, primerBL, ultimoBL, inodo, nRangoBL, nivel_punteros, &ptr, &eof);
     }
 
-    printf("[liberar_bloques_inodo()→ total bloques liberados: %d, total_breads: %d, total_bwrites: %d]\n", liberados,8,0);
+    printf("[liberar_bloques_inodo()→ total bloques liberados: %d, total_breads: %d, total_bwrites: %d]\n", liberados,total_breads,total_bwrites);
 
     return liberados;
 }
@@ -885,6 +887,7 @@ int liberar_directos(unsigned int *nBL, unsigned int ultimoBL, struct inodo *ino
  * @param eof: Indica si se ha llegado al final del fichero
  * @return Número de bloques liberados, FALLO en caso contrario
  */
+
 int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsigned int ultimoBL, struct inodo *inodo, int nRangoBL,unsigned int nivel_punteros, unsigned int *ptr, int *eof){
     // Definimos las variables necesarias
     int liberados = 0;
@@ -905,6 +908,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                 fprintf(stderr,RED "Error al leer el bloque de punteros\n");
                 return FALLO;
             }
+            total_breads++;
             // Copiamos el bloque de punteros
             memcpy(bloquePunteros_Aux, bloquePunteros, BLOCKSIZE);
         }
@@ -951,11 +955,12 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
         if (memcmp(bloquePunteros, bloquePunteros_Aux, BLOCKSIZE) != 0){
 
             // Si quedan punteros != 0 en el bloque lo salvamos
-            if (memcmp(bloquePunteros, bufferCeros, BLOCKSIZE) == 0){
+            if (memcmp(bloquePunteros, bufferCeros, BLOCKSIZE) != 0){
                 if (bwrite(*ptr, bloquePunteros) == FALLO){
                     fprintf(stderr,RED "Error al escribir el bloque de punteros\n");
                     return FALLO;
                 }             
+                total_bwrites++;
             } else { // Si no hay punteros != 0 en el bloque lo liberamos
                 liberar_bloque(*ptr);
                 *ptr = 0;
