@@ -860,12 +860,12 @@ int liberar_directos(unsigned int *nBL, unsigned int ultimoBL, struct inodo *ino
             inodo->punterosDirectos[*nBL] = 0;
             liberados++;
         }
-
+        *nBL = *nBL + 1; // Incrementamos el número de bloque lógico
         // Comprobamos si se ha llegado al final del fichero
         if (*nBL > ultimoBL){
             *eof = 1;
         }
-        *nBL = *nBL + 1; // Incrementamos el número de bloque lógico
+        
     }
 
     // Devolvemos el número de bloques liberados
@@ -891,7 +891,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
     unsigned int bloquePunteros[NPUNTEROS];
     unsigned int bloquePunteros_Aux[NPUNTEROS];
     unsigned int bufferCeros[NPUNTEROS];
-    unsigned int *ult_cero=0;
+    unsigned int *ult_cero=nBL;
 
     memset(bufferCeros, 0, BLOCKSIZE);
 
