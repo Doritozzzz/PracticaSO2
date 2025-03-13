@@ -855,6 +855,7 @@ int liberar_directos(unsigned int *nBL, unsigned int ultimoBL, struct inodo *ino
         // Comprobamos si el bloque lógico está ocupado
         if (inodo->punterosDirectos[*nBL] != 0) {
             printf("[liberar_bloques_inodo()\u2192 liberado BF %u de datos para BL %u]\n", inodo->punterosDirectos[*nBL], *nBL);
+            printf("TOILET\n");
             // Liberamos el bloque lógico
             liberar_bloque(inodo->punterosDirectos[*nBL]);
             inodo->punterosDirectos[*nBL] = 0;
@@ -887,7 +888,7 @@ int liberar_directos(unsigned int *nBL, unsigned int ultimoBL, struct inodo *ino
 int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsigned int ultimoBL, struct inodo *inodo, int nRangoBL,unsigned int nivel_punteros, unsigned int *ptr, int *eof){
     // Definimos las variables necesarias
     int liberados = 0;
-    int indice_inicial = 0;
+    int indice_inicial;
     unsigned int bloquePunteros[NPUNTEROS];
     unsigned int bloquePunteros_Aux[NPUNTEROS];
     unsigned int bufferCeros[NPUNTEROS];
@@ -913,6 +914,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
             if (bloquePunteros[i] != 0){ // Si el bloque de punteros no está vacío
                 if (nivel_punteros == 1){
                     printf("[liberar_bloques_inodo()\u2192 liberado BF %u de datos para BL %u]\n", bloquePunteros[i], *nBL);
+                    printf("SKIDIBI\n");
                     liberar_bloque(bloquePunteros[i]); // Liberamos el bloque de datos
                     bloquePunteros[i] = 0; // Ponemos el puntero a 0
                     liberados++; 
@@ -950,7 +952,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
 
             // Si quedan punteros != 0 en el bloque lo salvamos
             if (memcmp(bloquePunteros, bufferCeros, BLOCKSIZE) == 0){
-                if (bwrite(*ptr, bufferCeros) == FALLO){
+                if (bwrite(*ptr, bloquePunteros) == FALLO){
                     fprintf(stderr,RED "Error al escribir el bloque de punteros\n");
                     return FALLO;
                 }             
