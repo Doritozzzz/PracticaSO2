@@ -60,7 +60,7 @@ int main (int argc, char **argv){
     }
     
     printf("DATOS INODO %d:\n",ninodo);
-    printf("tipo: %d\n", inodo_stat.tipo);
+    printf("tipo: %c\n", inodo_stat.tipo);
     printf("permisos: %d\n", inodo_stat.permisos);
     printf("atime: %ld\n", inodo_stat.atime);
     printf("mtime: %ld\n", inodo_stat.mtime);
