@@ -960,6 +960,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                     fprintf(stderr,RED "Error al escribir el bloque de punteros\n");
                     return FALLO;
                 }             
+                printf("[liberar_bloques_inodo()\u2192 salvado BF %u de punteros_nivel%d correspondiente al BL %lu]\n", *ptr,nivel_punteros, *nBL + (nivel_punteros == 3 ? 1 : (nivel_punteros == 2 ? NPUNTEROS : NPUNTEROS * NPUNTEROS)));
                 total_bwrites++;
             } else { // Si no hay punteros != 0 en el bloque lo liberamos
                 liberar_bloque(*ptr);
