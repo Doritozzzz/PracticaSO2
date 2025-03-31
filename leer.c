@@ -39,8 +39,8 @@ int main(int argc, char **argv) {
         memset(buffer, 0, TAMBUFFER);
         leidos = mi_read_f(ninodo, buffer, offset, TAMBUFFER);
         if (leidos < 0) {
-            printf("Total bytes leidos:%u.\n", 0); //Si leidos < 0 contamos con que no ha leído nada
-            printf("tamEnBytesLog:%u.\n", inodo.tamEnBytesLog);
+            printf("\nTotal bytes leidos:%u\n", 0); //Si leidos < 0 contamos con que no ha leído nada
+            printf("TamEnBytesLog:%u\n", inodo.tamEnBytesLog);
             bumount(nombre_dispositivo);
             exit(EXIT_FAILURE);
         }
