@@ -15,13 +15,28 @@ int main(int argc, char **argv)
     int diferentes_inodos = atoi(argv[3]);
     int longitud_texto = strlen(texto);
 
+    // Pruebas de escritura
+    unsigned int offsets[5] = {9000, 209000, 30725000, 409605000, 480000000};
+    int total_offsets = 5;
+    int ninodo, bytes_escritos;
+
     // Estructura para almacenar la metainformación (STAT) del inodo
     struct STAT stat;
 
     // Comprobamos los argumentos
     if (argc != 4)
     {
-        fprintf(stderr, "Uso: %s <nombre_dispositivo> <\"texto a escribir\"> <diferentes_inodos>\n", argv[0]);
+        fprintf(stderr, "\033[31mUso: %s <nombre_dispositivo> <\"texto a escribir\"> <diferentes_inodos>\nOffset: ", argv[0]);
+        for (int i = 0; i < total_offsets; i++){
+            if(total_offsets-1==i){
+                fprintf(stderr, "%u", offsets[i]);
+            }
+            else{
+                fprintf(stderr, "%u, ", offsets[i]);
+            }
+            
+        }
+        fprintf(stderr, "\nSi diferentes_inodos=0 se reserva un solo inodo para todos los offsets\033[0m");
         exit(EXIT_FAILURE);
     }
 
@@ -32,10 +47,7 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    // Pruebas de escritura
-    unsigned int offsets[5] = {9000, 209000, 30725000, 409605000, 480000000};
-    int total_offsets = 5;
-    int ninodo, bytes_escritos;
+    
 
     printf("Longitud texto: %d\n\n", longitud_texto);
 
