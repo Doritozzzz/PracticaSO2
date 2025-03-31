@@ -26,12 +26,21 @@ int main(int argc, char **argv) {
     unsigned int offset = 0;
     int leidos = 0, total_leidos = 0;
 
+    // Volver a leer el inodo para obtener tamEnBytesLog
+    struct inodo inodo;
+    if (leer_inodo(ninodo, &inodo) == FALLO) {
+        fprintf(stderr, "Error al leer el inodo %u.\n", ninodo);
+        bumount(nombre_dispositivo);
+        exit(EXIT_FAILURE);
+    }
+
     // Leer bloque a bloque hasta que mi_read_f() devuelva 0
     do {
         memset(buffer, 0, TAMBUFFER);
         leidos = mi_read_f(ninodo, buffer, offset, TAMBUFFER);
         if (leidos < 0) {
-            fprintf(stderr, "Error en mi_read_f() para el inodo %u.\n", ninodo);
+            printf("Total bytes leidos:%u.\n", 0); //Si leidos < 0 contamos con que no ha leído nada
+            printf("tamEnBytesLog:%u.\n", inodo.tamEnBytesLog);
             bumount(nombre_dispositivo);
             exit(EXIT_FAILURE);
         }
@@ -42,13 +51,7 @@ int main(int argc, char **argv) {
         }
     } while (leidos > 0);
 
-    // Volver a leer el inodo para obtener tamEnBytesLog
-    struct inodo inodo;
-    if (leer_inodo(ninodo, &inodo) == FALLO) {
-        fprintf(stderr, "Error al leer el inodo %u.\n", ninodo);
-        bumount(nombre_dispositivo);
-        exit(EXIT_FAILURE);
-    }
+    
 
     // Mostrar resultados en stderr para no interferir con la salida estándar
     char info[128];

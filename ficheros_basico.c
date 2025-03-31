@@ -965,7 +965,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                 liberar_bloque(*ptr);
                 *ptr = 0;
                 liberados++;
-                //printf("[liberar_bloques_inodo()\u2192 liberado BF %u de punteros]\n", *ptr);
+                printf("[liberar_bloques_inodo()\u2192 liberado BF %u de punteros]\n", *ptr);
             }      
         }
     }  else { // Si el puntero es 0 es que tiene que ir a otro nivel

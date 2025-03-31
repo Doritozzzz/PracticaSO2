@@ -27,8 +27,6 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Error al cambiar permisos del inodo %u\n", ninodo);
         bumount(nombre_dispositivo);
         exit(EXIT_FAILURE);
-    } else {
-        fprintf(stderr, "Permisos del inodo %u cambiados a %o\n", ninodo, permisos);
     }
     
     // Desmontar el dispositivo virtual
