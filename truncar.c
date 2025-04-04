@@ -1,5 +1,5 @@
 #include "ficheros.h"
-
+#include <time.h>
 /**
  * Programa que trunca un fichero a los bytes indicados como nbytes
  * Uso: ./truncar <nombre_dispositivo> <ninodo> <nbytes>
@@ -59,12 +59,34 @@ int main (int argc, char **argv){
         return EXIT_FAILURE;
     }
     
-    printf("DATOS INODO %d:\n",ninodo);
+    printf("DATOS INODO %d:\n", ninodo);
     printf("tipo: %c\n", inodo_stat.tipo);
     printf("permisos: %d\n", inodo_stat.permisos);
-    printf("atime: %ld\n", inodo_stat.atime);
-    printf("mtime: %ld\n", inodo_stat.mtime);
-    printf("ctime: %ld\n", inodo_stat.ctime);
+
+    // Convertir atime (último acceso)
+    char atime_str[30];
+    struct tm *atime_tm = localtime(&(inodo_stat.atime));
+    strftime(atime_str, sizeof(atime_str), "%Y-%m-%d %H:%M:%S", atime_tm);
+    printf("atime: %s\n", atime_str);
+
+    // Convertir mtime (última modificación)
+    char mtime_str[30];
+    struct tm *mtime_tm = localtime(&(inodo_stat.mtime));
+    strftime(mtime_str, sizeof(mtime_str), "%Y-%m-%d %H:%M:%S", mtime_tm);
+    printf("mtime: %s\n", mtime_str);
+
+    // Convertir ctime (último cambio de metadatos)
+    char ctime_str[30];
+    struct tm *ctime_tm = localtime(&(inodo_stat.ctime));
+    strftime(ctime_str, sizeof(ctime_str), "%Y-%m-%d %H:%M:%S", ctime_tm);
+    printf("ctime: %s\n", ctime_str);
+
+    // Convertir btime (fecha creación inodo)
+    char btime_str[30];
+    struct tm *btime_tm = localtime(&(inodo_stat.btime));
+    strftime(btime_str, sizeof(btime_str), "%Y-%m-%d %H:%M:%S", btime_tm);
+    printf("btime: %s\n", btime_str);
+
     printf("nlinks: %d\n", inodo_stat.nlinks);
     printf("Tamaño en bytes lógicos: %u\n", inodo_stat.tamEnBytesLog);
     printf("Número de bloques ocupados: %d\n", inodo_stat.numBloquesOcupados);

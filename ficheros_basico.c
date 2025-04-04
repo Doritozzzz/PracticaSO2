@@ -917,7 +917,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
         for(int i = indice_inicial; i < NPUNTEROS && !(*eof); i++){
             if (bloquePunteros[i] != 0){ // Si el bloque de punteros no está vacío
                 if (nivel_punteros == 1){
-                    printf(GRAY"[liberar_bloques_inodo()\u2192 liberado BF %u de datos para BL %u]\n"RESET, bloquePunteros[i], *nBL);
+                    printf(WHITE"[liberar_bloques_inodo()\u2192 liberado BF %u de datos para BL %u]\n"RESET, bloquePunteros[i], *nBL);
                     
                     liberar_bloque(bloquePunteros[i]); // Liberamos el bloque de datos
                     bloquePunteros[i] = 0; // Ponemos el puntero a 0
@@ -925,12 +925,16 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                     *nBL = *nBL + 1; // Incrementamos el número de bloque lógico
                 } else {
                     // Liberamos los bloques de datos indirectos, ya ue no es el último nivel
+                    printf(GRAY"[liberar_bloques_inodo()\u2192 Del BL %u saltamos hasta BL %lu]\n"RESET, *ult_cero, *nBL + (nivel_punteros == 1 ? 1 : (nivel_punteros == 2 ? NPUNTEROS : NPUNTEROS * NPUNTEROS)));
+
                     liberados+=liberar_indirectos_recursivo(nBL, primerBL, ultimoBL, inodo, nRangoBL, nivel_punteros - 1, &bloquePunteros[i], eof);    
+
+                    
                 }
                 
-                printf(GRAY"[liberar_bloques_inodo()\u2192 Del BL %u saltamos hasta BL %lu]\n"RESET, *ult_cero, *nBL + (nivel_punteros == 1 ? 1 : (nivel_punteros == 2 ? NPUNTEROS : NPUNTEROS * NPUNTEROS)));
             } else {
                 ult_cero=nBL;
+                
                 // Cuantos bloques/posiciones de punteros hay que avanzar segun el nivel de punteros
                 switch (nivel_punteros) {
                     case 1:
@@ -938,6 +942,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                         break;
                     case 2: 
                         *nBL += NPUNTEROS;
+
                         break;
                     case 3:
                         *nBL += NPUNTEROS * NPUNTEROS;
@@ -965,9 +970,10 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                 total_bwrites++;
             } else { // Si no hay punteros != 0 en el bloque lo liberamos
                 liberar_bloque(*ptr);
+                printf(WHITE"[liberar_bloques_inodo()\u2192 liberado BF %u de punteros]\n"RESET, *ptr);
                 *ptr = 0;
                 liberados++;
-                printf(GRAY"[liberar_bloques_inodo()\u2192 liberado BF %u de punteros]\n"RESET, *ptr);
+                
             }      
         }
     }  else { // Si el puntero es 0 es que tiene que ir a otro nivel
