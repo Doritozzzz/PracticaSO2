@@ -895,7 +895,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
     unsigned int bloquePunteros[NPUNTEROS];
     unsigned int bloquePunteros_Aux[NPUNTEROS];
     unsigned int bufferCeros[NPUNTEROS];
-    unsigned int *ult_cero=nBL;
+    unsigned int ult_cero=*nBL;
 
     memset(bufferCeros, 0, BLOCKSIZE);
 
@@ -916,6 +916,11 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
         // Recorrer los bloques de punteros
         for(int i = indice_inicial; i < NPUNTEROS && !(*eof); i++){
             if (bloquePunteros[i] != 0){ // Si el bloque de punteros no está vacío
+                // Imprimir salto si hubo un salto previo
+                if (*nBL > ult_cero) {
+                    printf(BLUE "[liberar_bloques_inodo()→ Saltamos del BL %u al BL %u]\n" RESET, ult_cero,*nBL - 1);
+                }
+
                 if (nivel_punteros == 1){
                     printf(WHITE"[liberar_bloques_inodo()\u2192 liberado BF %u de datos para BL %u]\n"RESET, bloquePunteros[i], *nBL);
                     
@@ -923,38 +928,48 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                     bloquePunteros[i] = 0; // Ponemos el puntero a 0
                     liberados++; 
                     *nBL = *nBL + 1; // Incrementamos el número de bloque lógico
+                    ult_cero=*nBL;
                 } else {
                     // Liberamos los bloques de datos indirectos, ya ue no es el último nivel
-                    printf(GRAY"[liberar_bloques_inodo()\u2192 Del BL %u saltamos hasta BL %lu]\n"RESET, *ult_cero, *nBL + (nivel_punteros == 1 ? 1 : (nivel_punteros == 2 ? NPUNTEROS : NPUNTEROS * NPUNTEROS)));
-
+                    
                     liberados+=liberar_indirectos_recursivo(nBL, primerBL, ultimoBL, inodo, nRangoBL, nivel_punteros - 1, &bloquePunteros[i], eof);    
-
+                    ult_cero=*nBL;
                     
                 }
                 
             } else {
-                ult_cero=nBL;
-                
+                unsigned int salto = 0;
                 // Cuantos bloques/posiciones de punteros hay que avanzar segun el nivel de punteros
                 switch (nivel_punteros) {
                     case 1:
-                        (*nBL)++;
+                        salto = 1;
                         break;
                     case 2: 
-                        *nBL += NPUNTEROS;
-
+                        salto = NPUNTEROS;
                         break;
                     case 3:
-                        *nBL += NPUNTEROS * NPUNTEROS;
+                        salto = NPUNTEROS * NPUNTEROS;
                         break;
                     default:
                         break;
                 }
-              }
+
+                // Verificamos si estamos realmente saltando bloques
+                if (salto > 0) {
+                    *nBL += salto;
+                }
+            }
+
             // Si se ha llegado al final del fichero
             if (*nBL > ultimoBL){ 
                 *eof = 1;
             }
+        }
+
+        // Imprimir último salto si es necesario
+        if (*nBL > ult_cero && !(*eof)) {
+            printf(BLUE "[liberar_bloques_inodo()→ Saltamos del BL %u al BL %u]\n" RESET, ult_cero,*nBL - 1);
+        
         }
         // Si el bloque de punteros es distinto al original
         if (memcmp(bloquePunteros, bloquePunteros_Aux, BLOCKSIZE) != 0){
