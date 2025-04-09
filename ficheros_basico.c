@@ -985,7 +985,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                 total_bwrites++;
             } else { // Si no hay punteros != 0 en el bloque lo liberamos
                 liberar_bloque(*ptr);
-                printf(WHITE"[liberar_bloques_inodo()\u2192 liberado BF %u de punteros]\n"RESET, *ptr);
+                printf(WHITE"[liberar_bloques_inodo()\u2192 liberado BF %u de punteros_nivel %d correspondiente al BL %u]\n"RESET, *ptr, nivel_punteros, *nBL-1);
                 *ptr = 0;
                 liberados++;
                 
