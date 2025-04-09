@@ -1,5 +1,5 @@
 // mi_mkfs.c
-#include "ficheros_basico.h"
+#include "directorios.h"
 #include <string.h>
 
 /**
