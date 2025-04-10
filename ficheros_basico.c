@@ -965,12 +965,6 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                 *eof = 1;
             }
         }
-
-        // Imprimir último salto si es necesario
-        if (*nBL > ult_cero && !(*eof)) {
-            printf(BLUE "[liberar_bloques_inodo()→ Saltamos del BL %u al BL %u]\n" RESET, ult_cero,*nBL - 1);
-        
-        }
         // Si el bloque de punteros es distinto al original
         if (memcmp(bloquePunteros, bloquePunteros_Aux, BLOCKSIZE) != 0){
 
@@ -981,7 +975,7 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                     return FALLO;
                 }           
                 //Imprimir que se ha salvado el bloque (color naranja)
-                printf(ORANGE "[liberar_bloques_inodo()\u2192 salvado BF %u de punteros]\n" RESET, *ptr);
+                printf(ORANGE "[liberar_bloques_inodo()\u2192 salvado BF %u de punteros_nivel %d correspondiente al BL %u]\n"RESET, *ptr, nivel_punteros, ult_cero-1);
                 total_bwrites++;
             } else { // Si no hay punteros != 0 en el bloque lo liberamos
                 liberar_bloque(*ptr);
@@ -991,6 +985,13 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                 
             }      
         }
+
+        // Imprimir último salto si es necesario
+        if (*nBL > ult_cero && !(*eof)) {
+            printf(BLUE "[liberar_bloques_inodo()→ Saltamos del BL %u al BL %u]\n" RESET, ult_cero,*nBL - 1);
+        
+        }
+        
     }  else { // Si el puntero es 0 es que tiene que ir a otro nivel
         switch (nRangoBL) {
             case 1:

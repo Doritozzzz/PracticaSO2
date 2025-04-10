@@ -1,5 +1,6 @@
 #include "directorios.h"
 
+#if DEBUGN4
 void mostrar_buscar_entrada(char *camino, char reservar){
   unsigned int p_inodo_dir = 0;
   unsigned int p_inodo = 0;
@@ -12,6 +13,7 @@ void mostrar_buscar_entrada(char *camino, char reservar){
   printf("**********************************************************************\n");
   return;
 }
+#endif
 
 /**
  * Programa para leer el superbloque, mostrar el mapa de bits, reservar/liberar bloques
@@ -215,7 +217,7 @@ int main(int argc, char **argv) {
 #endif
 
 // Debug nivel 7
-//#if DEBUG_N7
+#if DEBUG_N7
     printf("===== PRUEBA DE BUSQUEDA DE ENTRADA =====\n");
     //Mostrar creación directorios y errores
     mostrar_buscar_entrada("pruebas/", 1); //ERROR_CAMINO_INCORRECTO
@@ -231,7 +233,7 @@ int main(int argc, char **argv) {
     mostrar_buscar_entrada("/pruebas/docs/doc1", 1); //ERROR_ENTRADA_YA_EXISTENTE
     mostrar_buscar_entrada("/pruebas/casos/", 1); //creamos /pruebas/casos/
     mostrar_buscar_entrada("/pruebas/docs/doc2", 1); //creamos /pruebas/docs/doc2
-//#endif
+#endif
 
     // Desmontar el dispositivo
     if (bumount(nombre_dispositivo) == FALLO) {
