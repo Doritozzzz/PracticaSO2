@@ -664,13 +664,17 @@ int traducir_bloque_inodo(unsigned int ninodo, unsigned int nblogico, char reser
                 // Actualizamos el puntero directo o indirecto
                 if (nivel_punteros == nRangoBL) {
                     inodo.punterosIndirectos[nRangoBL - 1] = ptr; // Actualizamos el puntero indirecto
+                    #if DEBUGN6
                     printf(GRAY "[traducir_bloque_inodo()→ inodo.punterosIndirectos[%d] = %d (reservado BF %d para punteros_nivel%d)]\n"RESET, nRangoBL - 1, ptr, ptr, nRangoBL);
+                    #endif
                 } else {
                     buffer[indice] = ptr; 
                     if (bwrite(ptr_ant, buffer) == FALLO) { // Escribimos el bloque de punteros
                         return FALLO;
                     }
+                    #if DEBUGN6
                     printf(GRAY"[traducir_bloque_inodo()→ punteros_nivel%d[%d] = %d (reservado BF %d para punteros_nivel%d)]\n"RESET, nivel_punteros + 1, indice, ptr, ptr, nivel_punteros);
+                    #endif
                 }
                 memset(buffer, 0, BLOCKSIZE);
             }      
@@ -699,13 +703,17 @@ int traducir_bloque_inodo(unsigned int ninodo, unsigned int nblogico, char reser
             inodo.ctime = time(NULL); // Actualizamos la fecha de modificación
             if (nRangoBL == 0) { // Actualizamos el puntero directo
                 inodo.punterosDirectos[nblogico] = ptr;
+                #if DEBUGN6
                 printf(GRAY"[traducir_bloque_inodo()→ inodo.punterosDirectos[%d] = %d (reservado BF %d para BL %u)]\n"RESET, nblogico, ptr, ptr, nblogico);
+                #endif
             } else {
                 buffer[indice] = ptr;
                 if (bwrite(ptr_ant, buffer) == FALLO) { // Escribimos el bloque de punteros
                     return FALLO;
                 }
+                #if DEBUGN6
                 printf(GRAY "[traducir_bloque_inodo()→ punteros_nivel1[%d] = %d (reservado BF %d para BL %u)]\n"RESET, indice, ptr, ptr, nblogico);
+                #endif
             }
         }
     }
