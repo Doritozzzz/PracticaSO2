@@ -162,9 +162,212 @@ int buscar_entrada(const char *camino_parcial, unsigned int *p_inodo_dir, unsign
         if (reservar && encontrado) {
             return ERROR_ENTRADA_YA_EXISTENTE;
         }
+        *p_inodo = entrada.ninodo; 
+        *p_entrada = num_entrada_inodo;
         return EXITO;
     } else {
         unsigned int nuevo_inodo_dir = entrada.ninodo;
         return buscar_entrada(final, &nuevo_inodo_dir, p_inodo, p_entrada, reservar, permisos);
     }
+}
+
+
+int mi_creat(const char *camino, unsigned char permisos) {
+    // Validar permisos (0-7)
+    if (permisos < 0 || permisos > 7) {
+        fprintf(stderr, "Error: Permisos inválidos (0-7)\n");
+        return FALLO;
+    }
+
+    // Obtener inodo raíz del superbloque (no haría falta, podemos suponer
+    //que el inodo raiz es el 0)
+    struct superbloque SB;
+    if (bread(posSB, &SB) == FALLO) {
+        fprintf(stderr, "Error al leer el superbloque\n");
+        return FALLO;
+    }
+    unsigned int p_inodo_dir = SB.posInodoRaiz;
+
+    // Variables para buscar_entrada()
+    unsigned int p_inodo;
+    unsigned int p_entrada;
+    int error;
+
+    // Llamar a buscar_entrada() con reservar=1
+    error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 1, permisos);
+
+    return error;
+}
+
+int mi_dir(const char *camino, char *buffer, char tipo, char flag) {
+    // Inicialización de variables
+    struct inodo inodo;
+    unsigned int p_inodo_dir, p_inodo, p_entrada;
+    int nentradas = 0;
+    char tmp[TAMFILA], permisos[4];
+    struct tm *tm;
+
+    // Limpiar el buffer
+    memset(buffer, 0, TAMBUFFER);
+
+    // 1. Buscar la entrada y verificar existencia
+    int error= buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 0);
+    if (error < 0) {
+        return error; // Error ya manejado por buscar_entrada()
+    }
+
+    // 2. Leer inodo y verificar tipo y permisos
+    if(leer_inodo(p_inodo, &inodo)==FALLO){
+        fprintf(stderr, RED"Error al leer el inodo\n"RESET);
+        return FALLO;
+    }
+    
+    
+    // Verificar coincidencia entre tipo esperado y real
+    if ((tipo == 'd' && inodo.tipo != 'd') || (tipo == 'f' && inodo.tipo != 'f')) {
+        sprintf(buffer, RED"Error: Tipo de entrada no coincide\n"RESET);
+        return FALLO;
+    }
+
+    // Verificar permisos de lectura
+    if (!(inodo.permisos & 4)) {
+
+        sprintf(buffer, RED"Error: Permiso de lectura denegado\n"RESET);
+        return FALLO;
+    }
+
+    // 3. Caso 1: Es un archivo (mostrar metadatos)
+    if (tipo == 'f') {
+        if (flag == 'l') { // Modo extendido
+            // Formatear permisos
+            permisos[0] = (inodo.permisos & 4) ? 'r' : '-';
+            permisos[1] = (inodo.permisos & 2) ? 'w' : '-';
+            permisos[2] = (inodo.permisos & 1) ? 'x' : '-';
+            permisos[3] = '\0';
+
+            // Formatear fecha
+            tm = localtime(&inodo.mtime);
+            sprintf(tmp, "%04d-%02d-%02d %02d:%02d:%02d",
+                   tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+                   tm->tm_hour, tm->tm_min, tm->tm_sec);
+
+            // Construir línea de salida
+            sprintf(buffer, "%c\t%s\t%s\t%d\t%s\n",
+                   inodo.tipo, permisos, tmp, inodo.tamEnBytesLog, camino);
+        } else { // Modo simple
+            sprintf(buffer, "%s\n", camino);
+        }
+        return 1; // Solo una "entrada" (el archivo mismo)
+    }
+
+    // 4. Caso 2: Es un directorio (listar entradas)
+    // Cabecera para modo extendido
+    if (flag == 'l' && inodo.tamEnBytesLog > 0) {
+        sprintf(buffer, "Total: %ld\nTipo\tPermisos\tmTime\t\t\t\tTamaño\tNombre\n--------------------------------------------------\n", 
+               inodo.tamEnBytesLog / sizeof(struct entrada));
+    }
+
+    // Leer entradas del directorio por bloques
+    struct entrada entradas[BLOCKSIZE / sizeof(struct entrada)];
+    int offset = 0, bytes_leidos;
+
+    while (offset < inodo.tamEnBytesLog) {
+        bytes_leidos = mi_read_f(p_inodo, entradas, offset, BLOCKSIZE);
+        if (bytes_leidos < 0) return -1;
+
+        // Procesar cada entrada del bloque actual
+        for (int i = 0; i < bytes_leidos / sizeof(struct entrada); i++) {
+            leer_inodo(entradas[i].ninodo, &inodo);
+
+            if (flag == 'l') { // Modo extendido
+                // Permisos
+                permisos[0] = (inodo.permisos & 4) ? 'r' : '-';
+                permisos[1] = (inodo.permisos & 2) ? 'w' : '-';
+                permisos[2] = (inodo.permisos & 1) ? 'x' : '-';
+                permisos[3] = '\0';
+
+                // Fecha
+                tm = localtime(&inodo.mtime);
+                sprintf(tmp, "%04d-%02d-%02d %02d:%02d:%02d",
+                       tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+                       tm->tm_hour, tm->tm_min, tm->tm_sec);
+
+                // Concatenar al buffer
+                sprintf(tmp + strlen(tmp), "\t%d\t%s", inodo.tamEnBytesLog, entradas[i].nombre);
+                strcat(buffer, tmp);
+                strcat(buffer, "\n");
+            } else { // Modo simple
+                strcat(buffer, entradas[i].nombre);
+                strcat(buffer, "\t");
+            }
+            nentradas++;
+        }
+        offset += BLOCKSIZE;
+    }
+
+    return nentradas;
+}
+
+int mi_chmod(const char *camino, unsigned char permisos) {
+    // Validar permisos (0-7)
+    if (permisos < 0 || permisos > 7) {
+        fprintf(stderr, "Error: Permisos inválidos (0-7)\n");
+        return FALLO;
+    }
+
+    // Obtener inodo raíz
+    struct superbloque SB;
+    if (bread(posSB, &SB) == FALLO) {
+        fprintf(stderr, "Error al leer el superbloque\n");
+        return FALLO;
+    }
+    
+    // Buscar la entrada
+    unsigned int p_inodo_dir = SB.posInodoRaiz;
+    unsigned int p_inodo;
+    unsigned int p_entrada;
+    int error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 0);
+
+    if (error < 0) {
+        mostrar_error_buscar_entrada(error);
+        return FALLO;
+    }
+
+    // Cambiar permisos
+    if (mi_chmod_f(p_inodo, permisos) == FALLO) {
+
+        fprintf(stderr, "Error al actualizar permisos\n");
+        return FALLO;
+    }
+
+    return EXITO;
+}
+
+int mi_stat(const char *camino, struct STAT *p_stat) {
+    struct superbloque SB;
+    if (bread(posSB, &SB) == FALLO) {
+        fprintf(stderr, "Error al leer el superbloque\n");
+        return FALLO;
+    }
+
+    unsigned int p_inodo_dir = SB.posInodoRaiz;
+    unsigned int p_inodo;
+    unsigned int p_entrada;
+    
+    // Buscar la entrada y obtener el número de inodo (p_inodo)
+    int error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 0);
+    
+    if (error < 0) {
+        mostrar_error_buscar_entrada(error);
+        return FALLO;
+    }
+
+    // Llenar la estructura STAT con los metadatos del inodo
+    if (mi_stat_f(p_inodo, p_stat) == FALLO) {
+        fprintf(stderr, "Error al obtener metadatos\n");
+        return FALLO;
+    }
+
+    // Devolver el número de inodo como valor positivo
+    return p_inodo; 
 }
