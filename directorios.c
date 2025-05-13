@@ -206,6 +206,8 @@ int mi_dir(const char *camino, char *buffer, char tipo, char flag) {
     int nentradas = 0;
     char tmp[TAMFILA], permisos[4];
     struct tm *tm;
+    struct entrada entradas[BLOCKSIZE / sizeof(struct entrada)];
+    int offset = 0, bytes_leidos;
 
     // Limpiar el buffer
     memset(buffer, 0, TAMBUFFER);
@@ -238,7 +240,10 @@ int mi_dir(const char *camino, char *buffer, char tipo, char flag) {
 
     // 3. Caso 1: Es un archivo (mostrar metadatos)
     if (tipo == 'f') {
+        
         if (flag == 'l') { // Modo extendido
+            printf("Tipo\tPermisos\tmTime\t\tTamaño\tNombre\n--------------------------------------------------\n");
+         
             // Formatear permisos
             permisos[0] = (inodo.permisos & 4) ? 'r' : '-';
             permisos[1] = (inodo.permisos & 2) ? 'w' : '-';
@@ -252,9 +257,11 @@ int mi_dir(const char *camino, char *buffer, char tipo, char flag) {
                    tm->tm_hour, tm->tm_min, tm->tm_sec);
 
             // Construir línea de salida
+
             sprintf(buffer, "%c\t%s\t%s\t%d\t%s\n",
-                   inodo.tipo, permisos, tmp, inodo.tamEnBytesLog, camino);
+                   tipo, permisos, tmp, inodo.tamEnBytesLog, camino);
         } else { // Modo simple
+            
             sprintf(buffer, "%s\n", camino);
         }
         return 1; // Solo una "entrada" (el archivo mismo)
@@ -263,14 +270,14 @@ int mi_dir(const char *camino, char *buffer, char tipo, char flag) {
     // 4. Caso 2: Es un directorio (listar entradas)
     // Cabecera para modo extendido
     if (flag == 'l' && inodo.tamEnBytesLog > 0) {
-        sprintf(buffer, "Total: %ld\nTipo\tPermisos\tmTime\t\t\t\tTamaño\tNombre\n--------------------------------------------------\n", 
+        sprintf(buffer, "Total: %ld\nTipo\tPermisos\tmTime\t\tTamaño\tNombre\n--------------------------------------------------\n", 
                inodo.tamEnBytesLog / sizeof(struct entrada));
     }
 
     // Leer entradas del directorio por bloques
-    struct entrada entradas[BLOCKSIZE / sizeof(struct entrada)];
-    int offset = 0, bytes_leidos;
-
+    
+    
+    
     while (offset < inodo.tamEnBytesLog) {
         bytes_leidos = mi_read_f(p_inodo, entradas, offset, BLOCKSIZE);
         if (bytes_leidos < 0) return -1;
@@ -280,11 +287,14 @@ int mi_dir(const char *camino, char *buffer, char tipo, char flag) {
             leer_inodo(entradas[i].ninodo, &inodo);
 
             if (flag == 'l') { // Modo extendido
+                if(inodo.tipo=='f'){
+                    strcat(buffer, "f\t");
+                }else strcat(buffer, "d\t");
+
                 // Permisos
-                permisos[0] = (inodo.permisos & 4) ? 'r' : '-';
-                permisos[1] = (inodo.permisos & 2) ? 'w' : '-';
-                permisos[2] = (inodo.permisos & 1) ? 'x' : '-';
-                permisos[3] = '\0';
+                if (inodo.permisos & 4) strcat(buffer, "r"); else strcat(buffer, "-\t");
+                if (inodo.permisos & 2) strcat(buffer, "w"); else strcat(buffer, "-\t");
+                if (inodo.permisos & 1) strcat(buffer, "x"); else strcat(buffer, "-\t");
 
                 // Fecha
                 tm = localtime(&inodo.mtime);

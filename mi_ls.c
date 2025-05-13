@@ -49,8 +49,8 @@ int main(int argc, char **argv) {
         // Desmontar dispositivo
         if (bumount() == FALLO) {
             fprintf(stderr, RED"Error al desmontar el dispositivo\n"RESET);
-        return FALLO;
         }
+        return FALLO;
     }
 
     // Imprimir resultados
@@ -65,6 +65,7 @@ int main(int argc, char **argv) {
         }
     } else if (tipo == 'f') {
         // Mostrar metadatos del fichero (buffer ya formateado)
+        
         printf("%s", buffer);
     }
 
