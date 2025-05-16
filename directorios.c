@@ -1,5 +1,16 @@
 #include "directorios.h"
 
+#define PROFUNDIDAD 32
+
+struct UltimaEntrada {
+    char camino[TAMNOMBRE * PROFUNDIDAD];
+    int p_inodo;
+};
+
+static struct UltimaEntrada UltimaEntradaLectura;
+static struct UltimaEntrada UltimaEntradaEscritura;
+
+
 /**
  *  extraer_camino --> Función para extraer el camino de un fichero
  *  @param camino: Cadena de caracteres que representa el camino del fichero
@@ -380,4 +391,56 @@ int mi_stat(const char *camino, struct STAT *p_stat) {
 
     // Devolver el número de inodo como valor positivo
     return p_inodo; 
+}
+
+int mi_write(const char *camino, const void *buf, unsigned int offset, unsigned int nbytes) {
+    unsigned int p_inodo_dir, p_inodo, p_entrada;
+    int bytes_escritos;
+    int resultado;
+
+    // Check if the path matches the cached entry
+    if (strcmp(UltimaEntradaEscritura.camino, camino) == 0) {
+        p_inodo = (unsigned int)UltimaEntradaEscritura.p_inodo;
+    } else {
+        // Cache miss: call buscar_entrada with necessary parameters
+        resultado = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 0);
+        if (resultado < 0) {
+            return resultado; // Return error (e.g., ENOENT)
+        }
+
+        // Update the cache with the new path and inode (cast to int)
+        strncpy(UltimaEntradaEscritura.camino, camino, sizeof(UltimaEntradaEscritura.camino) - 1);
+        UltimaEntradaEscritura.camino[sizeof(UltimaEntradaEscritura.camino) - 1] = '\0';
+        UltimaEntradaEscritura.p_inodo = (int)p_inodo;
+    }
+
+    // Perform the write operation using the obtained inode
+    bytes_escritos = mi_write_f(p_inodo, buf, offset, nbytes);
+    return bytes_escritos;
+}
+
+int mi_read(const char *camino, void *buf, unsigned int offset, unsigned int nbytes) {
+    unsigned int p_inodo_dir, p_inodo, p_entrada;
+    int bytes_leidos;
+    int resultado;
+
+    // 1. Comprobar si el camino está en la caché de lectura
+    if (strcmp(UltimaEntradaLectura.camino, camino) == 0) {
+        p_inodo = (unsigned int)UltimaEntradaLectura.p_inodo; // Conversión de tipos
+    } else {
+        // 2. Llamar a buscar_entrada si no hay coincidencia en la caché
+        resultado = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 0);
+        if (resultado < 0) {
+            return resultado; // Devolver error (ej: ENOENT, EACCES)
+        }
+
+        // 3. Actualizar la caché de lectura
+        strncpy(UltimaEntradaLectura.camino, camino, sizeof(UltimaEntradaLectura.camino) - 1);
+        UltimaEntradaLectura.camino[sizeof(UltimaEntradaLectura.camino) - 1] = '\0'; // Asegurar fin de cadena
+        UltimaEntradaLectura.p_inodo = (int)p_inodo; // Almacenar como int
+    }
+
+    // 4. Leer del inodo y devolver bytes leídos
+    bytes_leidos = mi_read_f(p_inodo, buf, offset, nbytes);
+    return bytes_leidos;
 }

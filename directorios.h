@@ -1,6 +1,7 @@
 // directorios.h
 #include "ficheros.h" 
 
+
 #define TAMNOMBRE 60 //tamaño del nombre de directorio o fichero, en Ext2 = 256
 #define ERROR_CAMINO_INCORRECTO (-2)
 #define ERROR_PERMISO_LECTURA (-3)
@@ -27,3 +28,7 @@ int mi_creat(const char *camino, unsigned char permisos);
 int mi_dir(const char *camino, char *buffer, char tipo, char flag);
 int mi_chmod(const char *camino, unsigned char permisos);
 int mi_stat(const char *camino, struct STAT *p_stat);
+//Nivel 9
+int mi_write(const char *camino, const void *buf, unsigned int offset, unsigned int nbytes);
+int mi_read(const char *camino, void *buf, unsigned int offset, unsigned int nbytes);
+
