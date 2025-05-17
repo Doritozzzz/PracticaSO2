@@ -34,6 +34,4 @@ int mi_stat(const char *camino, struct STAT *p_stat);
 //Nivel 9
 int mi_write(const char *camino, const void *buf, unsigned int offset, unsigned int nbytes);
 int mi_read(const char *camino, void *buf, unsigned int offset, unsigned int nbytes);
-
-
 int actualizar_timestamp(unsigned int ninodo, char tipo);

@@ -52,6 +52,10 @@ static UltimaEntrada UltimaEntradaLectura  = {{""}, 0};
     return EXITO;
 }
 
+/**
+ * mostrar_error_buscar_entrada: Muestra un mensaje de error según el código de error
+ * @param error: Código de error devuelto por buscar_entrada()
+ */
 void mostrar_error_buscar_entrada(int error)
 {
     // Incluir códigos ANSI para color rojo y reset.
@@ -85,6 +89,17 @@ void mostrar_error_buscar_entrada(int error)
         break;
     }
 }
+
+/**
+ * buscar_entrada: Busca una entrada en un directorio y devuelve su inodo
+ * @param camino_parcial: Camino parcial del fichero o directorio a buscar
+ * @param p_inodo_dir: Puntero al inodo del directorio padre
+ * @param p_inodo: Puntero al inodo del fichero o directorio encontrado
+ * @param p_entrada: Puntero a la posición de la entrada en el directorio
+ * @param reservar: Si es 1, reserva un nuevo inodo si no se encuentra la entrada
+ * @param permisos: Permisos del nuevo inodo (si se reserva)
+ * @return EXITO si se encuentra la entrada, FALLO en caso contrario
+ */
 int buscar_entrada(const char *camino_parcial, unsigned int *p_inodo_dir, unsigned int *p_inodo, unsigned int *p_entrada, char reservar, unsigned char permisos) {
     struct entrada entrada;
     struct inodo inodo_dir;
@@ -184,7 +199,12 @@ int buscar_entrada(const char *camino_parcial, unsigned int *p_inodo_dir, unsign
     }
 }
 
-
+/**
+ * mi_creat: Crea un fichero con los permisos indicados
+ * @param camino: Ruta del fichero a crear
+ * @param permisos: Permisos del nuevo inodo (0-7)
+ * @return EXITO si se crea el fichero, FALLO en caso contrario
+ */
 int mi_creat(const char *camino, unsigned char permisos) {
     // Validar permisos (0-7)
     if (permisos < 0 || permisos > 7) {
@@ -212,6 +232,14 @@ int mi_creat(const char *camino, unsigned char permisos) {
     return error;
 }
 
+/**
+ * mi_dir: Muestra el contenido de un directorio o los metadatos de un fichero
+ * @param camino: Ruta del directorio o fichero a mostrar
+ * @param buffer: Buffer donde se almacenará la salida
+ * @param tipo: Tipo de entrada ('d' para directorio, 'f' para fichero)
+ * @param flag: Modo de salida ('l' para extendido, 's' para simple)
+ * @return Número de entradas leídas o FALLO en caso de error
+ */
 int mi_dir(const char *camino, char *buffer, char tipo, char flag) {
     // Inicialización de variables
     struct inodo inodo;
@@ -331,6 +359,12 @@ int mi_dir(const char *camino, char *buffer, char tipo, char flag) {
     return nentradas;
 }
 
+/**
+ * mi_chmod: Cambia los permisos de un fichero o directorio
+ * @param camino: Ruta del fichero o directorio
+ * @param permisos: Nuevos permisos (0-7)
+ * @return EXITO si se cambian los permisos, FALLO en caso contrario
+ */
 int mi_chmod(const char *camino, unsigned char permisos) {
     // Validar permisos (0-7)
     if (permisos < 0 || permisos > 7) {
@@ -366,6 +400,12 @@ int mi_chmod(const char *camino, unsigned char permisos) {
     return EXITO;
 }
 
+/**
+ * mi_stat: Devuelve los metadatos de un fichero o directorio
+ * @param camino: Ruta del fichero o directorio
+ * @param p_stat: Puntero a la estructura STAT donde se almacenarán los metadatos
+ * @return Número de inodo si tiene éxito, FALLO en caso contrario
+ */
 int mi_stat(const char *camino, struct STAT *p_stat) {
     struct superbloque SB;
     if (bread(posSB, &SB) == FALLO) {
@@ -396,8 +436,12 @@ int mi_stat(const char *camino, struct STAT *p_stat) {
 }
 
 /**
- * mi_write (apartado 5b): escribe nbytes desde buf en el fichero `camino`
- * a partir de `offset`. Utiliza caché de última entrada. Devuelve bytes escritos o <0.
+ * mi_write: Escribe datos en un fichero
+ * @param camino: Ruta del fichero
+ * @param buf: Buffer con los datos a escribir
+ * @param offset: Offset donde empezar a escribir
+ * @param nbytes: Número de bytes a escribir
+ * @return Número de bytes escritos o FALLO en caso de error
  */
 int mi_write(const char *camino, const void *buf, unsigned int offset, unsigned int nbytes) {
     unsigned int p_inodo_dir = 0, p_inodo = 0, p_entrada = 0;
@@ -429,8 +473,12 @@ int mi_write(const char *camino, const void *buf, unsigned int offset, unsigned 
 }
 
 /**
- * mi_read (apartado 6b): lee nbytes desde `camino` en buf a partir de offset.
- * Utiliza caché de última entrada de lectura. Devuelve bytes leídos o <0.
+ * mi_read: Lee datos de un fichero
+ * @param camino: Ruta del fichero
+ * @param buf: Buffer donde se almacenarán los datos leídos
+ * @param offset: Offset donde empezar a leer
+ * @param nbytes: Número de bytes a leer
+ * @return Número de bytes leídos o FALLO en caso de error
  */
 int mi_read(const char *camino, void *buf, unsigned int offset, unsigned int nbytes) {
     unsigned int p_inodo_dir = 0, p_inodo = 0, p_entrada = 0;
@@ -462,7 +510,10 @@ int mi_read(const char *camino, void *buf, unsigned int offset, unsigned int nby
 }
 
 /**
- * actualizar_timestamp: actualiza atime o mtime del inodo
+ * actualizar_timestamp: Actualiza el timestamp de un inodo
+ * @param ninodo: Número de inodo a actualizar
+ * @param tipo: Tipo de timestamp a actualizar ('m' para mtime, 'a' para atime)
+ * @return EXITO si se actualiza correctamente, FALLO en caso contrario
  */
 int actualizar_timestamp(unsigned int ninodo, char tipo) {
     struct inodo in;
