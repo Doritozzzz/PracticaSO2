@@ -1,10 +1,13 @@
 #include "directorios.h"
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 /**
- * Programa para leer un fichero en un dispositivo virtual.
+ * Programa para leer un fichero desde el sistema de archivos.
  * Uso: mi_cat <nombre_dispositivo> </ruta_fichero>
- * 
+ *
  * @param argc Número de argumentos
  * @param argv Array de argumentos
  * @return EXIT_SUCCESS si todo va bien, EXIT_FAILURE en caso contrario
@@ -15,42 +18,33 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    const char *disco = argv[1];
+    const char *nombre_dispositivo = argv[1];
     const char *camino = argv[2];
     unsigned int offset = 0;
-    int leidos;
+    int leidos = 0;
     unsigned int total_leidos = 0;
     unsigned char buffer[TAMBUFFER];
     struct STAT stat;
 
-    // Montar dispositivo
-    if (bmount(disco) == FALLO) {
-        fprintf(stderr, "Error al montar dispositivo %s\n", disco);
+    // Montar el dispositivo virtual
+    if (bmount(nombre_dispositivo) == FALLO) {
+        fprintf(stderr, "Error al montar el dispositivo %s\n", nombre_dispositivo);
         return EXIT_FAILURE;
     }
 
-    // Obtener información del fichero (tamaño lógico)
-    unsigned int p_inodo_dir = 0;
-    unsigned int p_inodo = 0;
-    unsigned int p_entrada = 0;
-    unsigned int res_busq = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 4); // permisos lectura
-    if (res_busq < 0) {
-        fprintf(stderr, "Error: no existe %s\n", camino);
-        bumount(disco);
-        return EXIT_FAILURE;
-    }
-    if (mi_stat_f(p_inodo, &stat) == FALLO) {
-        fprintf(stderr, "Error al obtener stat de %s\n", camino);
-        bumount(disco);
+    // Obtener metadatos del fichero
+    if (mi_stat(camino, &stat) == FALLO) {
+        fprintf(stderr, "Error: no se pudo obtener stat de %s\n", camino);
+        bumount(nombre_dispositivo);
         return EXIT_FAILURE;
     }
 
-    // Leer iterativamente hasta agotar el fichero
+    // Leer en bloques hasta agotar tamEnBytesLog
     do {
         leidos = mi_read(camino, buffer, offset, TAMBUFFER);
         if (leidos < 0) {
             fprintf(stderr, "Error al leer %s\n", camino);
-            bumount(disco);
+            bumount(nombre_dispositivo);
             return EXIT_FAILURE;
         }
         if (leidos > 0) {
@@ -60,12 +54,12 @@ int main(int argc, char **argv) {
         }
     } while (leidos > 0);
 
-    // Mostrar estadísticas por stderr
-    dprintf(2, "\ntotal_leidos %u\ntamEnBytesLog %u\n", total_leidos, stat.tamEnBytesLog);
+    // Mostrar estadísticas (stderr)
+    dprintf(2, "\ntotal_leidos: %u\ntamEnBytesLog: %u\n", total_leidos, stat.tamEnBytesLog);
 
-    // Desmontar dispositivo
-    if (bumount(disco) == FALLO) {
-        fprintf(stderr, "Error al desmontar dispositivo %s\n", disco);
+    // Desmontar el dispositivo virtual
+    if (bumount(nombre_dispositivo) == FALLO) {
+        fprintf(stderr, "Error al desmontar el dispositivo %s\n", nombre_dispositivo);
         return EXIT_FAILURE;
     }
 
