@@ -13,7 +13,7 @@
 int main(int argc, char **argv) {
     if (argc != 4) {
         fprintf(stderr, "Uso: %s <nombre_dispositivo> <permisos> </ruta_fichero>\n", argv[0]);
-        return EXIT_FAILURE;
+        return FALLO;
     }
 
     const char *disco = argv[1];
@@ -24,13 +24,13 @@ int main(int argc, char **argv) {
     // Comprobar que la ruta no termina en '/'
     if (len == 0 || camino[len - 1] == '/') {
         fprintf(stderr, "Error sintaxis: la ruta no debe terminar en '/': %s\n", camino);
-        return EXIT_FAILURE;
+        return FALLO;
     }
 
     // Montar dispositivo virtual
     if (bmount(disco) == FALLO) {
         fprintf(stderr, "Error al montar el dispositivo %s\n", disco);
-        return EXIT_FAILURE;
+        return FALLO;
     }
 
     // Crear el fichero con los permisos indicados
@@ -38,15 +38,14 @@ int main(int argc, char **argv) {
     if (res < 0) {
         fprintf(stderr, "Error al crear el fichero %s (código %d)\n", camino, res);
         bumount(disco);
-        return EXIT_FAILURE;
+        return FALLO;
     }
-    printf("Fichero creado: %s (inodo %d) con permisos %o\n", camino, res, permisos);
 
     // Desmontar dispositivo
     if (bumount(disco) == FALLO) {
         fprintf(stderr, "Error al desmontar el dispositivo %s\n", disco);
-        return EXIT_FAILURE;
+        return FALLO;
     }
 
-    return EXIT_SUCCESS;
+    return EXITO;
 }

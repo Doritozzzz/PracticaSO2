@@ -126,8 +126,11 @@ int buscar_entrada(const char *camino_parcial, unsigned int *p_inodo_dir, unsign
         return ERROR_CAMINO_INCORRECTO;
     } 
 
+
     // Debug: valores extraídos del camino
+    #if DEBUGN8
     printf(GRAY"[buscar_entrada()→ inicial: %s, final: %s, reservar: %d]\n"RESET, inicial, final, reservar);
+    #endif
 
     leer_inodo(*p_inodo_dir, &inodo_dir);
     if ((inodo_dir.permisos & 4) != 4){
@@ -169,11 +172,15 @@ int buscar_entrada(const char *camino_parcial, unsigned int *p_inodo_dir, unsign
             }
             nueva_entrada.ninodo = reservar_inodo('d', permisos);
             // Debug: reserva de inodo directorio
+            #if DEBUGN8
             printf(GRAY"[buscar_entrada()→ reservado inodo %d tipo d con permisos %d para %s]\n"RESET, nueva_entrada.ninodo, permisos, inicial);
+            #endif
         } else {
             nueva_entrada.ninodo = reservar_inodo('f', permisos);
             // Debug: reserva de inodo fichero
+            #if DEBUGN8
             printf(GRAY"[buscar_entrada()→ reservado inodo %d tipo f con permisos %d para %s]\n"RESET, nueva_entrada.ninodo, permisos, inicial);
+            #endif
         }
 
         if (mi_write_f(*p_inodo_dir, &nueva_entrada, inodo_dir.tamEnBytesLog, sizeof(struct entrada)) == FALLO) {
@@ -181,7 +188,9 @@ int buscar_entrada(const char *camino_parcial, unsigned int *p_inodo_dir, unsign
             return FALLO;
         }
         // Debug: entrada creada
+        #if DEBUGN8
         printf(GRAY"[buscar_entrada()→ creada entrada: %s, %d]\n"RESET, inicial, nueva_entrada.ninodo);
+        #endif
         *p_inodo = nueva_entrada.ninodo;
         *p_entrada = cant_entradas_inodo;
     }

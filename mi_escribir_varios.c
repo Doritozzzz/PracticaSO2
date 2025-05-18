@@ -19,6 +19,8 @@ int main(int argc, char **argv) {
     const char *texto   = argv[3];
     unsigned int offset = atoi(argv[4]);
     unsigned int nbytes = strlen(texto);
+    int bytes=0;
+    int varios=10;
 
     // Montar el dispositivo virtual
     if (bmount(disco) == FALLO) {
@@ -29,18 +31,17 @@ int main(int argc, char **argv) {
     // Mostrar longitud del texto
     printf("longitud texto: %u\n", nbytes);
 
-    int total_bytes = 0;
-    for (int i = 0; i < 10; i++) {
-        int bytes = mi_write(camino, texto, offset + i * nbytes, nbytes);
+    for (int i = 0; i < varios; i++) {
+        bytes += mi_write(camino, texto, offset + BLOCKSIZE * i, nbytes);
         if (bytes < 0) {
             fprintf(stderr, "Error al escribir en %s (bloque %d)\n", camino, i);
             bumount();
             return EXIT_FAILURE;
         }
-        total_bytes += bytes;
+        
     }
 
-    printf("Bytes escritos: %d\n", total_bytes);
+    printf("Bytes escritos: %d\n", bytes);
 
     // Desmontar el dispositivo virtual
     if (bumount(disco) == FALLO) {
