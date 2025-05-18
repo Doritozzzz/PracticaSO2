@@ -192,7 +192,8 @@ int buscar_entrada(const char *camino_parcial, unsigned int *p_inodo_dir, unsign
         printf(GRAY"[buscar_entrada()→ creada entrada: %s, %d]\n"RESET, inicial, nueva_entrada.ninodo);
         #endif
         *p_inodo = nueva_entrada.ninodo;
-        *p_entrada = cant_entradas_inodo;
+        *p_entrada = num_entrada_inodo;
+        return EXITO;
     }
 
     if (strlen(final) == 0 || strcmp(final, "/") == 0) {
@@ -201,10 +202,12 @@ int buscar_entrada(const char *camino_parcial, unsigned int *p_inodo_dir, unsign
         }
         *p_inodo = entrada.ninodo; 
         *p_entrada = num_entrada_inodo;
+         
         return EXITO;
     } else {
-        unsigned int nuevo_inodo_dir = entrada.ninodo;
-        return buscar_entrada(final, &nuevo_inodo_dir, p_inodo, p_entrada, reservar, permisos);
+        *p_inodo_dir = entrada.ninodo;
+        
+        return buscar_entrada(final, p_inodo_dir, p_inodo, p_entrada, reservar, permisos);
     }
 }
 
@@ -538,7 +541,100 @@ int actualizar_timestamp(unsigned int ninodo, char tipo) {
 }
 
 
-int mi_link(const char *camino1, const char *camino2){
+int mi_link(const char *camino1, const char *camino2) {
+    unsigned int p_inodo_dir1 = 0, p_inodo_dir2 = 0;
+    unsigned int p_inodo1, p_inodo2;
+    unsigned int p_entrada1, p_entrada2;
+    int error;
+    struct inodo inodo;
 
+    // 1. Buscar entrada para camino1 (sin reservar)
+    if ((error = buscar_entrada(camino1, &p_inodo_dir1, &p_inodo1, &p_entrada1, 0, 0)) < 0) {
+        mostrar_error_buscar_entrada(error);
+        return -1;
+    }
     
+
+    // Leer inodo de camino1 y verificar que es fichero
+    if (leer_inodo(p_inodo1, &inodo) < 0) return -1;
+    if (inodo.tipo == 'd') {
+        fprintf(stderr, "Error: camino1 es un directorio\n");
+        return -1;
+    }
+
+    // 2. Buscar entrada para camino2 (reservando)
+    if ((error = buscar_entrada(camino2, &p_inodo_dir2, &p_inodo2, &p_entrada2, 1, 6)) < 0) {
+        mostrar_error_buscar_entrada(error);
+        return -1;
+    }
+    // 3. Leer entrada creada y modificar su inodo
+    struct entrada entrada;
+    if (mi_read_f(p_inodo_dir2, &entrada, p_entrada2 * sizeof(struct entrada), sizeof(struct entrada)) < 0) {
+        return -1;
+    }
+
+
+    // 4. Actualizar entrada con el inodo de camino1
+    entrada.ninodo = p_inodo1;
+    if (mi_write_f(p_inodo_dir2, &entrada, p_entrada2 * sizeof(struct entrada), sizeof(struct entrada)) < 0) {
+        return -1;
+    }
+
+    // 5. Liberar inodo reservado para camino2
+    liberar_inodo(p_inodo2);
+
+    // 6. Actualizar metadatos de camino1
+    inodo.nlinks++;
+    inodo.ctime = time(NULL);
+    if (escribir_inodo(p_inodo1, &inodo) < 0) {
+        return FALLO;
+    }
+
+    return EXITO;
+}
+
+int mi_unlink(const char *camino) {
+    unsigned int p_inodo_dir = 0, p_inodo, p_entrada;
+    int error;
+    struct inodo inodo;
+
+    // 1. Buscar la entrada a borrar
+    if ((error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 0)) < 0) {
+        return error;
+    }
+
+    // 2. Leer inodo a borrar
+    if (leer_inodo(p_inodo, &inodo) < 0) return -1;
+
+    // 3. Si es directorio, verificar que está vacío
+    if (inodo.tipo == 'd' && inodo.tamEnBytesLog > 0) {
+        return -8; // Código error: "Directorio no vacío"
+    }
+
+    // 4. Eliminar entrada del directorio padre
+    struct entrada entrada;
+    struct inodo inodo_dir;
+    
+    // Leer entrada y último inodo del directorio padre
+    if (leer_inodo(p_inodo_dir, &inodo_dir) < 0) return -1;
+    
+    // Si no es la última entrada, mover la última
+    if (p_entrada != (inodo_dir.tamEnBytesLog / sizeof(struct entrada) - 1)) {
+        mi_read_f(p_inodo_dir, &entrada, inodo_dir.tamEnBytesLog - sizeof(struct entrada), sizeof(struct entrada));
+        mi_write_f(p_inodo_dir, &entrada, p_entrada * sizeof(struct entrada), sizeof(struct entrada));
+    }
+    
+    // Truncar directorio padre
+    mi_truncar_f(p_inodo_dir, inodo_dir.tamEnBytesLog - sizeof(struct entrada));
+
+    // 5. Liberar inodo
+    inodo.nlinks--;
+    if (inodo.nlinks == 0) {
+        liberar_inodo(p_inodo);
+    } else {
+        inodo.ctime = time(NULL);
+        escribir_inodo(p_inodo, &inodo);
+    }
+
+    return 0;
 }
