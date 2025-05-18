@@ -29,8 +29,8 @@ int main(int argc, char **argv) {
     // Escribir con la función de la capa de directorios
     int bytes_escritos = mi_write(camino, texto, offset, nbytes);
     if (bytes_escritos < 0) {
-        fprintf(stderr, "Error al escribir en %s\n", camino);
         bumount();
+        printf("Bytes escritos: %d\n", 0);
         return FALLO;
     }
 

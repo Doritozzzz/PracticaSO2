@@ -536,3 +536,9 @@ int actualizar_timestamp(unsigned int ninodo, char tipo) {
     if (escribir_inodo(ninodo, &in) == FALLO) return -1;
     return 0;
 }
+
+
+int mi_link(const char *camino1, const char *camino2){
+
+    
+}
