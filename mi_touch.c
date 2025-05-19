@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     // Crear el fichero con los permisos indicados
     int res = mi_creat(camino, permisos);
     if (res < 0) {
-        fprintf(stderr, "Error al crear el fichero %s (código %d)\n", camino, res);
+        mostrar_error_buscar_entrada(res);
         bumount(disco);
         return FALLO;
     }

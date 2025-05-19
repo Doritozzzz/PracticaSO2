@@ -607,7 +607,8 @@ int mi_unlink(const char *camino) {
 
     // 3. Si es directorio, verificar que está vacío
     if (inodo.tipo == 'd' && inodo.tamEnBytesLog > 0) {
-        return -8; // Código error: "Directorio no vacío"
+        fprintf(stderr, "Error: El directorio %s no está vacío\n", camino);
+        return FALLO;
     }
 
     // 4. Eliminar entrada del directorio padre
