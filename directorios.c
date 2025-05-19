@@ -495,7 +495,6 @@ int mi_write(const char *camino, const void *buf, unsigned int offset, unsigned 
 int mi_read(const char *camino, void *buf, unsigned int offset, unsigned int nbytes) {
     unsigned int p_inodo_dir = 0, p_inodo = 0, p_entrada = 0;
     int bytes_leidos;
-
     // Caché de lectura
     if (strcmp(UltimaEntradaLectura.camino, camino) == 0) {
         p_inodo = UltimaEntradaLectura.p_inodo;
@@ -503,7 +502,10 @@ int mi_read(const char *camino, void *buf, unsigned int offset, unsigned int nby
     } else {
         // búsqueda del inodo con permisos 4 (solo lectura)
         int res = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 4);
-        if (res < 0) return res;
+        if (res < 0){
+            mostrar_error_buscar_entrada(res);
+            return FALLO;
+        } 
         // actualizar caché
         strncpy(UltimaEntradaLectura.camino, camino, sizeof(UltimaEntradaLectura.camino)-1);
         UltimaEntradaLectura.camino[sizeof(UltimaEntradaLectura.camino)-1] = '\0';
@@ -513,11 +515,13 @@ int mi_read(const char *camino, void *buf, unsigned int offset, unsigned int nby
 
     // lectura en ficheros
     bytes_leidos = mi_read_f(p_inodo, buf, offset, nbytes);
-    if (bytes_leidos < 0) return bytes_leidos;
+    if (bytes_leidos < 0) {
+        return FALLO;
+    }
 
     // actualizar timestamp de acceso
-    if (actualizar_timestamp(p_inodo, 'a') < 0) return -1;
-
+    if (actualizar_timestamp(p_inodo, 'a') < 0) return FALLO;
+    printf("BYTES: %d\n",bytes_leidos);
     return bytes_leidos;
 }
 
