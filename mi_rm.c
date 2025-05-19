@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     int error = mi_unlink(argv[2]);
     
     if (error < 0) {
-        mostrar_error_buscar_entrada(error);
+        
         bumount();
         return -1;
     }

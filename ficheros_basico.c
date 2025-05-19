@@ -819,9 +819,9 @@ int liberar_bloques_inodo(unsigned int primerBL, struct inodo *inodo){
     } else {
         ultimoBL = inodo->tamEnBytesLog / BLOCKSIZE;
     }
-
+    #if DEBUGN6
     printf(BLUE"[liberar_bloques_inodo()\u2192 primer BL: %u, último BL: %u]\n"RESET, primerBL, ultimoBL);
-
+    #endif
     // Obtenemos el rango de bloque lógico
     nRangoBL = obtener_nRangoBL(inodo, nBL, &ptr);
     if (nRangoBL == FALLO) {
@@ -841,9 +841,9 @@ int liberar_bloques_inodo(unsigned int primerBL, struct inodo *inodo){
         nivel_punteros = nRangoBL;
         liberados+= liberar_indirectos_recursivo(&nBL, primerBL, ultimoBL, inodo, nRangoBL, nivel_punteros, &ptr, &eof);
     }
-
+    #if DEBUGN6
     printf(BLUE "[liberar_bloques_inodo()→ total bloques liberados: %d, total_breads: %d, total_bwrites: %d]\n" RESET, liberados,total_breads,total_bwrites);
-
+    #endif
     return liberados;
 }
 
@@ -864,8 +864,9 @@ int liberar_directos(unsigned int *nBL, unsigned int ultimoBL, struct inodo *ino
 
         // Comprobamos si el bloque lógico está ocupado
         if (inodo->punterosDirectos[*nBL] != 0) {
+            #if DEBUGN6
             printf(GRAY"[liberar_bloques_inodo()\u2192 liberado BF %u de datos para BL %u]\n"RESET, inodo->punterosDirectos[*nBL], *nBL);
-            
+            #endif
             // Liberamos el bloque lógico
             liberar_bloque(inodo->punterosDirectos[*nBL]);
             inodo->punterosDirectos[*nBL] = 0;
@@ -926,12 +927,15 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
             if (bloquePunteros[i] != 0){ // Si el bloque de punteros no está vacío
                 // Imprimir salto si hubo un salto previo
                 if (*nBL > ult_cero) {
+                    #if DEBUGN6
                     printf(BLUE "[liberar_bloques_inodo()→ Saltamos del BL %u al BL %u]\n" RESET, ult_cero,*nBL - 1);
+                    #endif
                 }
 
                 if (nivel_punteros == 1){
+                    #if DEBUGN6
                     printf(WHITE"[liberar_bloques_inodo()\u2192 liberado BF %u de datos para BL %u]\n"RESET, bloquePunteros[i], *nBL);
-                    
+                    #endif
                     liberar_bloque(bloquePunteros[i]); // Liberamos el bloque de datos
                     bloquePunteros[i] = 0; // Ponemos el puntero a 0
                     liberados++; 
@@ -983,11 +987,15 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
                     return FALLO;
                 }           
                 //Imprimir que se ha salvado el bloque (color naranja)
+                #if DEBUGN6
                 printf(ORANGE "[liberar_bloques_inodo()\u2192 salvado BF %u de punteros_nivel %d correspondiente al BL %u]\n"RESET, *ptr, nivel_punteros, ult_cero-1);
+                #endif
                 total_bwrites++;
             } else { // Si no hay punteros != 0 en el bloque lo liberamos
                 liberar_bloque(*ptr);
+                #if DEBUGN6
                 printf(WHITE"[liberar_bloques_inodo()\u2192 liberado BF %u de punteros_nivel %d correspondiente al BL %u]\n"RESET, *ptr, nivel_punteros, *nBL-1);
+                #endif
                 *ptr = 0;
                 liberados++;
                 
@@ -996,7 +1004,9 @@ int liberar_indirectos_recursivo(unsigned int *nBL, unsigned int primerBL, unsig
 
         // Imprimir último salto si es necesario
         if (*nBL > ult_cero && !(*eof)) {
+            #if DEBUGN6
             printf(BLUE "[liberar_bloques_inodo()→ Saltamos del BL %u al BL %u]\n" RESET, ult_cero,*nBL - 1);
+            #endif
         
         }
         
