@@ -254,44 +254,41 @@ int mi_creat(const char *camino, unsigned char permisos) {
  */
 int mi_dir(const char *camino, char *buffer, char tipo, char flag) {
     // Inicialización de variables
+    struct inodo dir_inodo;  // inodo original del directorio
     struct inodo inodo;
+    struct inodo entrada_inodo;               // inodo de cada entrada
     unsigned int p_inodo_dir, p_inodo, p_entrada;
     int nentradas = 0;
     char tmp[TAMFILA], permisos[4];
     struct tm *tm;
     struct entrada entradas[BLOCKSIZE / sizeof(struct entrada)];
     int offset = 0, bytes_leidos;
+    unsigned int tam_dir_bytes;               // conservar tamaño original del directorio
 
     // Limpiar el buffer
     memset(buffer, 0, TAMBUFFER);
 
     // 1. Buscar la entrada y verificar existencia
-    int error= buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 0);
-    if (error < 0) {
-        return error; // Error ya manejado por buscar_entrada()
-    }
+    int error = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 0);
+    if (error < 0) return error;
 
-    // 2. Leer inodo y verificar tipo y permisos
-    if(leer_inodo(p_inodo, &inodo)==FALLO){
-        fprintf(stderr, RED"Error al leer el inodo\n"RESET);
+    // 2. Leer inodo y verificar tipo y permisos (directorio o archivo)
+    if (leer_inodo(p_inodo, &dir_inodo) == FALLO) {
+        fprintf(stderr, RED "Error al leer el inodo\n" RESET);
         return FALLO;
     }
-    
-    
+
     // Verificar coincidencia entre tipo esperado y real
-    if ((tipo == 'd' && inodo.tipo != 'd') || (tipo == 'f' && inodo.tipo != 'f')) {
-        sprintf(buffer, RED"Error: Tipo de entrada no coincide\n"RESET);
+    if ((tipo == 'd' && dir_inodo.tipo != 'd') || (tipo == 'f' && dir_inodo.tipo != 'f')) {
+        sprintf(buffer, RED "Error: Tipo de entrada no coincide\n" RESET);
         return FALLO;
     }
-
     // Verificar permisos de lectura
-    if (!(inodo.permisos & 4)) {
-
-        sprintf(buffer, RED"Error: Permiso de lectura denegado\n"RESET);
+    if (!(dir_inodo.permisos & 4)) {
+        sprintf(buffer, RED "Error: Permiso de lectura denegado\n" RESET);
         return FALLO;
     }
 
-    // 3. Caso 1: Es un archivo (mostrar metadatos)
     if (tipo == 'f') {
         
         if (flag == 'l') { // Modo extendido
@@ -319,47 +316,45 @@ int mi_dir(const char *camino, char *buffer, char tipo, char flag) {
         }
         return 1; // Solo una "entrada" (el archivo mismo)
     }
+    
+    // Si es directorio: guardamos el tamaño original antes de entrar al bucle
+    tam_dir_bytes = dir_inodo.tamEnBytesLog;
 
-    // 4. Caso 2: Es un directorio (listar entradas)
-    // Cabecera para modo extendido
-    if (flag == 'l' && inodo.tamEnBytesLog > 0) {
-        sprintf(buffer, "Total: %ld\nTipo\tPermisos\tmTime\t\tTamaño\tNombre\n--------------------------------------------------\n", 
-               inodo.tamEnBytesLog / sizeof(struct entrada));
+    // Cabecera modo extendido
+    if (flag == 'l' && tam_dir_bytes > 0) {
+        sprintf(buffer, "Total: %lu\nTipo\tPermisos\tmTime\t\tTamaño\tNombre\n--------------------------------------------------\n", 
+               tam_dir_bytes / sizeof(struct entrada));
     }
 
-    // Leer entradas del directorio por bloques
-    
-    
-    
-    while (offset < inodo.tamEnBytesLog) {
+    // 4. Leer entradas en bucle sin sobrescribir dir_inodo
+    while (offset < tam_dir_bytes) {
         bytes_leidos = mi_read_f(p_inodo, entradas, offset, BLOCKSIZE);
-        if (bytes_leidos < 0) return -1;
+        if (bytes_leidos < 0) return FALLO;
 
-        // Procesar cada entrada del bloque actual
-        for (int i = 0; i < bytes_leidos / sizeof(struct entrada); i++) {
-            leer_inodo(entradas[i].ninodo, &inodo);
+        int n = bytes_leidos / sizeof(struct entrada);
+        for (int i = 0; i < n; i++) {
+            // Leemos metadatos de la entrada en una variable distinta
+            leer_inodo(entradas[i].ninodo, &entrada_inodo);
 
-            if (flag == 'l') { // Modo extendido
-                if(inodo.tipo=='f'){
-                    strcat(buffer, "f\t");
-                }else strcat(buffer, "d\t");
-
+            if (flag == 'l') {
+                // Tipo
+                strcat(buffer, entrada_inodo.tipo == 'd' ? "d\t" : "f\t");
                 // Permisos
-                if (inodo.permisos & 4) strcat(buffer, "r"); else strcat(buffer, "-\t");
-                if (inodo.permisos & 2) strcat(buffer, "w"); else strcat(buffer, "-\t");
-                if (inodo.permisos & 1) strcat(buffer, "x"); else strcat(buffer, "-\t");
-
+                strcat(buffer, (entrada_inodo.permisos & 4) ? "r" : "-");
+                strcat(buffer, (entrada_inodo.permisos & 2) ? "w" : "-");
+                strcat(buffer, (entrada_inodo.permisos & 1) ? "x" : "-");
+                strcat(buffer, "\t");
                 // Fecha
-                tm = localtime(&inodo.mtime);
+                tm = localtime(&entrada_inodo.mtime);
                 sprintf(tmp, "%04d-%02d-%02d %02d:%02d:%02d",
                        tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
                        tm->tm_hour, tm->tm_min, tm->tm_sec);
-
-                // Concatenar al buffer
-                sprintf(tmp + strlen(tmp), "\t%d\t%s", inodo.tamEnBytesLog, entradas[i].nombre);
+                // Tamaño y nombre
+                sprintf(tmp + strlen(tmp), "\t%u\t%s", entrada_inodo.tamEnBytesLog, entradas[i].nombre);
                 strcat(buffer, tmp);
                 strcat(buffer, "\n");
-            } else { // Modo simple
+            } else {
+                // Modo simple: nombre + tab
                 strcat(buffer, entradas[i].nombre);
                 strcat(buffer, "\t");
             }
