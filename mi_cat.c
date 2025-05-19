@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define TAMBUFFER 1500
 
 /**
  * Programa para leer un fichero y mostrar su contenido por pantalla o guardarlo en otro fichero.
@@ -60,7 +59,7 @@ int main(int argc, char **argv) {
         if (argc == 4) close(fd_salida);
         return EXIT_FAILURE;
     }
-    printf("HOLA\n");
+    
     // 5. Leer y mostrar contenido
     unsigned int bytes_restantes = stat.tamEnBytesLog;
     while (bytes_restantes > 0) {
@@ -69,12 +68,10 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Error al leer %s\n", camino);
             break;
         }
-        printf("LEIDOS:%d\n",leidos);
         write(fd_salida, buffer, leidos);
         total_leidos += leidos;
         offset += leidos;
         bytes_restantes -= leidos;
-        printf("RESTANTES:%d\n",bytes_restantes);
 
     }
 

@@ -190,8 +190,9 @@ int mi_write_f(unsigned int ninodo, const void *buf_original, unsigned int offse
         // Cantida de bytes a leer
         unsigned int bytes_a_leer = final - inicio;
         if (nbfisico == FALLO) { // Si no hay bloque lógico, rellenamos con 0s
-            bytes_leidos += bytes_a_leer;
             memset((char*)buf_original + bytes_leidos, 0, bytes_a_leer);
+            bytes_leidos += bytes_a_leer;
+            
         } else {
             if (bread(nbfisico, buf_bloque) == FALLO) { // Leemos el bloque
                 return FALLO;

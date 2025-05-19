@@ -20,8 +20,12 @@ echo
 echo -e "\x1B[38;2;17;245;120m$ ./mi_touch disco 6 /dir1/dir11/fic1\x1b[0m"
 ./mi_touch disco 6 /dir1/dir11/fic1
 echo
+echo -e "\x1B[38;2;17;245;120m$ ./mi_escribir disco /dir1/dir11/fic1 maria 0\x1b[0m"
+./mi_escribir disco /dir1/dir11/fic1 "maria" 5000
 echo -e "\x1B[38;2;17;245;120m$ ./mi_escribir disco /dir1/dir11/fic1 hellooooooo 0\x1b[0m"
-./mi_escribir disco /dir1/dir11/fic1 "hellooooooo" 0
+./mi_escribir disco /dir1/dir11/fic1 "hellooooooo" 20000
+echo -e "\x1B[38;2;17;245;120m$ ./mi_escribir disco /dir1/dir11/fic1 pedro 0\x1b[0m"
+./mi_escribir disco /dir1/dir11/fic1 "pedro" 100000
 echo
 echo -e "\x1B[38;2;17;245;120m##############################################################\x1b[0m"
 echo -e "\x1B[38;2;17;245;120m$ ./mi_mkdir disco 6 /dir2/\x1b[0m"

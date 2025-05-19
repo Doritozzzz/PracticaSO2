@@ -462,7 +462,6 @@ int mi_write(const char *camino, const void *buf, unsigned int offset, unsigned 
     // Caché de escritura
     if (strcmp(UltimaEntradaEscritura.camino, camino) == 0) {
         p_inodo = UltimaEntradaEscritura.p_inodo;
-        printf(BLUE"\n[mi_write() → Utilizamos la caché de escritura en vez de llamar a buscar_entrada()]"RESET "\n");
     } else {
         // búsqueda del inodo con permisos 6 (lectura+escritura)
         int res = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 6);
@@ -471,7 +470,6 @@ int mi_write(const char *camino, const void *buf, unsigned int offset, unsigned 
         strncpy(UltimaEntradaEscritura.camino, camino, sizeof(UltimaEntradaEscritura.camino)-1);
         UltimaEntradaEscritura.camino[sizeof(UltimaEntradaEscritura.camino)-1] = '\0';
         UltimaEntradaEscritura.p_inodo = p_inodo;
-        printf(ORANGE"[mi_write() → Actualizamos la caché de escritura]"RESET "\n");
     }
 
     // escritura en ficheros
@@ -498,7 +496,6 @@ int mi_read(const char *camino, void *buf, unsigned int offset, unsigned int nby
     // Caché de lectura
     if (strcmp(UltimaEntradaLectura.camino, camino) == 0) {
         p_inodo = UltimaEntradaLectura.p_inodo;
-        printf(BLUE"\n[mi_read() → Utilizamos la caché de lectura en vez de llamar a buscar_entrada()]"RESET "\n");
     } else {
         // búsqueda del inodo con permisos 4 (solo lectura)
         int res = buscar_entrada(camino, &p_inodo_dir, &p_inodo, &p_entrada, 0, 4);
@@ -510,7 +507,6 @@ int mi_read(const char *camino, void *buf, unsigned int offset, unsigned int nby
         strncpy(UltimaEntradaLectura.camino, camino, sizeof(UltimaEntradaLectura.camino)-1);
         UltimaEntradaLectura.camino[sizeof(UltimaEntradaLectura.camino)-1] = '\0';
         UltimaEntradaLectura.p_inodo = p_inodo;
-        printf(ORANGE"[mi_read() → Actualizamos la caché de lectura]"RESET "\n");
     }
 
     // lectura en ficheros
@@ -521,7 +517,6 @@ int mi_read(const char *camino, void *buf, unsigned int offset, unsigned int nby
 
     // actualizar timestamp de acceso
     if (actualizar_timestamp(p_inodo, 'a') < 0) return FALLO;
-    printf("BYTES: %d\n",bytes_leidos);
     return bytes_leidos;
 }
 
