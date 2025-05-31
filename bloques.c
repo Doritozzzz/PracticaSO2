@@ -5,12 +5,36 @@
 // Descriptor del fichero (dispositivo virtual)
 static int descriptor = 0;
 
+//Semáforo global del fs
+static sem_t *mutex;
+static unsigned int inside_sc = 0;
+
+//Funciones inicio y parada de semaforos
+void mi_waitSem() {
+   if (!inside_sc) { // inside_sc==0, no se ha hecho ya un wait
+       waitSem(mutex);
+   }
+   inside_sc++;
+}
+
+
+void mi_signalSem() {
+   inside_sc--;
+   if (!inside_sc) {
+       signalSem(mutex);
+   }
+}
+
+
 /**
  * bmount --> Función para montar el dispositivo virtual
  * @param camino: Ruta del fichero que se va a montar
  * @return Descriptor si se ha montado correctamente, FALLO en caso contrario
  */
 int bmount(const char *camino) {
+    if(descriptor>0){
+        close(descriptor);
+    }
     // Cambiar la máscara de creación de ficheros para evitar problemas de permisos
     umask(000);
 
@@ -22,7 +46,12 @@ int bmount(const char *camino) {
         fprintf(stderr,RED "Error en la apertura del fichero %s: %s\n", camino, strerror(errno));
         return FALLO;
     }
-
+    if (!mutex) { // el semáforo es único en el sistema y sólo se ha de inicializar 1 vez (padre)
+       mutex = initSem(); 
+       if (mutex == SEM_FAILED) {
+           return -1;
+       }
+    }
     // Devolver el descriptor
     return descriptor;
 }
@@ -32,14 +61,13 @@ int bmount(const char *camino) {
  */
 int bumount(){
     // Cerrar el fichero (dispositivo virtual)
-    int cierre = close(descriptor);
-
+    int cierre = close(descriptor); 
     // Comprobar si se ha cerrado correctamente, devuelve FALLO en caso contrario
     if (cierre == -1) {
         fprintf(stderr,RED "Error en el cierre del fichero: %s\n", strerror(errno));
         return FALLO;
     }
-
+    deleteSem();
     // Devolver EXITO (se ha cerrado correctamente)
     return EXITO;
 }

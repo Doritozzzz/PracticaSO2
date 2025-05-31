@@ -11,7 +11,7 @@
 int main(int argc, char **argv) {
     if (argc != 5) {
         fprintf(stderr, "\033[31mUso: %s <nombre_dispositivo> </ruta_fichero> <texto> <offset>\033[0m\n", argv[0]);
-        return EXIT_FAILURE;
+        return FALLO;
     }
 
     const char *disco   = argv[1];
@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
     // Montar el dispositivo virtual
     if (bmount(disco) == FALLO) {
         fprintf(stderr, "Error al montar el dispositivo %s\n", disco);
-        return EXIT_FAILURE;
+        return FALLO;
     }
 
     // Mostrar longitud del texto
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
         if (bytes < 0) {
             fprintf(stderr, "Error al escribir en %s (bloque %d)\n", camino, i);
             bumount();
-            return EXIT_FAILURE;
+            return FALLO;
         }
         
     }
@@ -46,8 +46,8 @@ int main(int argc, char **argv) {
     // Desmontar el dispositivo virtual
     if (bumount(disco) == FALLO) {
         fprintf(stderr, "Error al desmontar el dispositivo %s\n", disco);
-        return EXIT_FAILURE;
+        return FALLO;
     }
 
-    return EXIT_SUCCESS;
+    return FALLO;
 }

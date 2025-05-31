@@ -56,9 +56,7 @@ int main(int argc, char **argv) {
     printf("totInodos = %u\n", SB.totInodos);
     printf("\n");
 
-    printf("sizeof struct superbloque: %lu\n", sizeof(struct superbloque));
-    printf("sizeof struct inodo: %lu\n", sizeof(struct inodo));
-    printf("\n");
+    
 
     #if DEBUG_N4
     printf("===== MAPA DE BITS =====\n");

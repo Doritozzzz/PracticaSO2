@@ -13,7 +13,7 @@
 int main(int argc, char **argv) {
     if (argc != 3 && argc != 4) {
         fprintf(stderr, "Uso: %s <nombre_dispositivo> </ruta_fichero> [>fichero_salida.txt]\n", argv[0]);
-        return EXIT_FAILURE;
+        return FALLO;
     }
 
     const char *nombre_dispositivo = argv[1];
@@ -28,12 +28,12 @@ int main(int argc, char **argv) {
     if (argc == 4) {
         if (strcmp(argv[3], ">") != 0) {
             fprintf(stderr, "Error: Formato de redirección incorrecto. Use '> fichero'\n");
-            return EXIT_FAILURE;
+            return FALLO;
         }
         fd_salida = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0666);
         if (fd_salida == -1) {
             perror("Error al abrir fichero de salida");
-            return EXIT_FAILURE;
+            return FALLO;
         }
     }
 
@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     if (bmount(nombre_dispositivo) == FALLO) {
         fprintf(stderr, "Error al montar %s\n", nombre_dispositivo);
         if (argc == 4) close(fd_salida);
-        return EXIT_FAILURE;
+        return FALLO;
     }
 
     // 3. Validar que no sea un directorio
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Error: %s es un directorio\n", camino);
         bumount();
         if (argc == 4) close(fd_salida);
-        return EXIT_FAILURE;
+        return FALLO;
     }
 
     // 4. Obtener metadatos
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Error: no existe %s\n", camino);
         bumount();
         if (argc == 4) close(fd_salida);
-        return EXIT_FAILURE;
+        return FALLO;
     }
     
     // 5. Leer y mostrar contenido
@@ -81,5 +81,5 @@ int main(int argc, char **argv) {
     bumount();
     if (argc == 4) close(fd_salida);
 
-    return (leidos < 0) ? EXIT_FAILURE : EXIT_SUCCESS;
+    return (leidos < 0) ? FALLO : EXITO;
 }

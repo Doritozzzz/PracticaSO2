@@ -254,6 +254,9 @@ echo -e "\x1B[38;2;17;245;120m$ ./mi_rm (adaptado rmdir) disco /dir2/dir21/ #o m
 echo -e "\x1B[38;2;17;245;120m#Error: El directorio /dir2/dir21/ no está vacío\x1b[0m"
 ./mi_rm disco /dir2/dir21/ 
 echo
+echo -e "\x1B[38;2;17;245;120m$./mi_ls -l disco /dir2/dir21/ #pruebas mias\x1b[0m"
+./mi_ls -l disco /dir2/dir21/
+echo
 echo -e "\x1B[38;2;17;245;120m$ ./mi_rm disco /dir2/dir21/fic211\x1b[0m"
 ./mi_rm disco /dir2/dir21/fic211
 echo
@@ -268,6 +271,9 @@ echo -e "\x1B[38;2;17;245;120m$ ./mi_rm disco /dir1/dir11/fic113 #Ahora sí se l
 echo
 echo -e "\x1B[38;2;17;245;120m$ ./leer_sf disco\x1b[0m"
 ./leer_sf disco
+echo
+echo -e "\x1B[38;2;17;245;120m$./mi_ls -l disco /dir2/dir21/ #pruebas mias\x1b[0m"
+./mi_ls -l disco /dir2/dir21/
 echo
 echo -e "\x1B[38;2;17;245;120m$ ./mi_rm disco /dir2/dir21/fic211 #ya no existe\x1b[0m"
 ./mi_rm disco /dir2/dir21/fic211
