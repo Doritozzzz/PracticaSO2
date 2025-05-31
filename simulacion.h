@@ -3,7 +3,10 @@
 
 #include <sys/types.h>
 #include <time.h>
+#include "directorios.h"
 
+#define NUMPROCESOS 100
+#define NUMESCRITURAS 50
 // Estructura de registro (24 bytes)
 struct REGISTRO {
     time_t fecha;       // Timestamp en segundos

@@ -6,11 +6,9 @@
 #include <time.h>
 #include <string.h>
 #include <limits.h>
-#include "directorios.h"
 #include "simulacion.h"
 
-#define NUMPROCESOS 100
-#define NUMESCRITURAS 50
+
 #define REGMAX 500000
 #define ESPERA_PROCESOS 150000   // 150ms en microsegundos
 #define ESPERA_ESCRITURAS 50000  // 50ms en microsegundos
